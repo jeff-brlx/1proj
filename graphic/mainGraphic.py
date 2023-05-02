@@ -82,7 +82,8 @@ class jeu:
         self.nbPlayers = None
         while self.nbPlayers not in [2, 3, 4]:
             try:
-                self.nbPlayers = int(input("Enter the number of players: "))
+                self.nbPlayers = int(
+                    input("Enter the number of players ( 2 , 3 or 4): "))
                 if self.nbPlayers not in [2, 3, 4]:
                     print("Invalid input. Please enter a number between 2 and 4.")
             except ValueError:
@@ -110,7 +111,8 @@ class jeu:
         self.gridSize = None
         while self.gridSize not in [5, 7, 9, 11]:
             try:
-                self.gridSize = int(input("Enter a grid Size: "))
+                self.gridSize = int(
+                    input("Enter a grid Size ( 5 , 7 , 9 or 11): "))
                 if self.gridSize not in [5, 7, 9, 11]:
                     print(
                         "Invalid input. Please enter a number equal to : 5 , 7 , 9 or 11.")

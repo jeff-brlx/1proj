@@ -2117,6 +2117,7 @@ class jeu:
                                           2, (self.screenSizeY - self.boardSizeY) // 2))
 
     def pathFinding(self, start, grid):
+
         # recherche du joueur sur la grille (start = référence du joueur)
         startCoord = None  # ajout d'une valeur par défaut pour startCoord
         for i in range(self.gridSize):

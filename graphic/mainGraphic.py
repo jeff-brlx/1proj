@@ -91,7 +91,7 @@ class jeu:
 
         # Création d'un dictionnaire pour stocker les informations sur chaque joueur
         self.infosPlayers = {}
-
+        print(" *  only 1 bot per game is tolered  * ")
         # Demander à l'utilisateur si chaque joueur est un bot ou un joueur réel
         for i in range(self.nbPlayers):
             player = "player " + str(i+1)
@@ -2262,7 +2262,6 @@ class jeu:
         pygamepopup.init()
         self.drawCellHeight()
         self.displayScreen()
-        print(self.vari)
         while self.running:
             while not self.checkWin():
                 player = "player " + str(self.currentPlayer)

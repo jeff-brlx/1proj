@@ -253,18 +253,22 @@ class jeu:
             self.cellSize = 80
             self.pawnShadow = 4
             self.pawnRadius = self.wallSize//2
+            self.settingX = 860
         elif self.fakeGridSize == 7:
             self.cellSize = 60
             self.pawnShadow = 4
             self.pawnRadius = self.wallSize//2
+            self.settingX = 880
         elif self.fakeGridSize == 9:
             self.cellSize = 50
             self.pawnShadow = 3
             self.pawnRadius = self.wallSize//2
+            self.settingX = 920
         elif self.fakeGridSize == 11:
             self.cellSize = 40
             self.pawnShadow = 3
             self.pawnRadius = 4
+            self.settingX = 920
 
         self.screenSizeX = 1280
         self.screenSizeY = 650
@@ -298,9 +302,14 @@ class jeu:
 
         # définition des surfaces de clique pour les in-game menu
         self.exitRect = pygame.Rect(330, 0, self.cellSize, self.cellSize)
+        self.settingsRect = pygame.Rect(
+            self.settingX, 0, self.cellSize, self.cellSize)
         self.winExitRect = False
         self.rankingRect = False
-        self.settingsRect = False
+
+        self.menuExitRect = None
+        self.sfxRect = None
+        self.audioRect = None
 
         # définition de surafaces pour le hover des cellules et murs
         self.cellHover = pygame.Surface(
@@ -311,6 +320,10 @@ class jeu:
             (self.wallSize, self.cellSize*2+self.wallSize))
         self.horizontalWallHover = pygame.Surface(
             (self.cellSize*2+self.wallSize, self.wallSize))
+        # son
+        self.audio = False
+        self.sfx = False
+        self.ShowSettingsMenu = False
 
     def getCurrentPlayer(self):
         return self.currentPlayer
@@ -328,10 +341,45 @@ class jeu:
                 self.running = False
                 self.closeWindow()
 
-            if event.type == pygame.MOUSEBUTTONUP:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if self.exitRect.collidepoint(pos):
                     self.closeWindow()
+                if self.settingsRect.collidepoint(pos):
+                    if self.ShowSettingsMenu == False:
+                        self.ShowSettingsMenu = True
+                    else:
+                        self.screen.blit(self.board, ((self.screenSizeX - self.boardSizeX) //
+                                                      2, (self.screenSizeY - self.boardSizeY) // 2))
+                        self.ShowSettingsMenu = False
+                        pygame.display.flip()
+
+                if self.ShowSettingsMenu == True:
+                    if self.audioRect:
+                        if self.audioRect.collidepoint(pos):
+                            if self.audio == True:
+                                self.audio = False
+                            else:
+                                self.audio = True
+                            if self.ShowSettingsMenu == True:
+                                self.screen.blit(self.popupsurface2,
+                                                 self.popupsurfaceRect2)
+                                self.screen.blit(self.popupsurface,
+                                                 self.popupsurfaceRect)
+                                pygame.display.flip()
+
+                    if self.sfxRect:
+                        if self.sfxRect.collidepoint(pos):
+                            if self.sfx == True:
+                                self.sfx = False
+                            else:
+                                self.sfx = True
+                            if self.ShowSettingsMenu == True:
+                                self.screen.blit(self.popupsurface2,
+                                                 self.popupsurfaceRect2)
+                                self.screen.blit(self.popupsurface,
+                                                 self.popupsurfaceRect)
+                                pygame.display.update()
 
                 if self.winExitRect:
                     if self.winExitRect.collidepoint(pos):
@@ -367,637 +415,639 @@ class jeu:
         return
 
     def movePawn(self, x, y):
-        # fonction déplacement des pions
-        for i in range(self.gridSize):
-            for j in range(self.gridSize):
-                if 0 <= x < self.gridSize+2 and 0 <= y < self.gridSize+2:
-
-                    if self.currentPlayer == 1:
-                        # déplacments normaux (gauche , droite , haut , bat)
-                        if self.grid[y][x-2].getNature() == 4 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+2].getNature() == 4 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+2][x].getNature() == 4 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-2][x].getNature() == 4 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        # saut de pions
-                        if self.grid[y][x-4].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-4].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+4].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+4].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-4][x].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-4][x].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+4][x].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+4][x].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        # déplacements en diagonale ( pion adverse + barrière )
-                        if self.grid[y+2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        # déplacement en diagonale ( pion adverse + pion adverse )
-                        # verticale
-                        if self.grid[y+2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        # Horizontale
-                        if self.grid[y-2][x-2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(4)
-                            self.nextPlayer()
-                            return
-
-                    if self.currentPlayer == 2:
-                        # déplacments normaux (gauche , droite , haut , bat)
-                        # verticale
-                        if self.grid[y][x-2].getNature() == 5 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+2].getNature() == 5 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+2][x].getNature() == 5 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-2][x].getNature() == 5 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        # saut de pions
-                        if self.grid[y][x-4].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-4].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+4].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+4].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-4][x].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-4][x].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+4][x].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+4][x].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        # déplacements en diagonale ( pion adverse + barrière  )
-                        if self.grid[y+2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        # déplacement en diagonale ( pion adverse + pion adverse )
-                        # verticale
-                        if self.grid[y+2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        # Horizontale
-                        if self.grid[y-2][x-2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(5)
-                            self.nextPlayer()
-                            return
-
-                    if self.currentPlayer == 3:
-                        # déplacments normaux (gauche , droite , haut , bat)
-                        if self.grid[y][x-2].getNature() == 6 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+2].getNature() == 6 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+2][x].getNature() == 6 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-2][x].getNature() == 6 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        # saut de pions
-                        if self.grid[y][x-4].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-4].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+4].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+4].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-4][x].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-4][x].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+4][x].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+4][x].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        # déplacements en diagonale ( pion adverse + barrière  )
-                        if self.grid[y+2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        # déplacement en diagonale ( pion adverse + pion adverse )
-                        if self.grid[y+2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        # Horizontale
-                        if self.grid[y-2][x-2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(6)
-                            self.nextPlayer()
-                            return
-
-                    if self.currentPlayer == 4:
-                        # déplacments normaux (gauche , droite , haut , bat)
-                        if self.grid[y][x-2].getNature() == 8 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+2].getNature() == 8 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+2][x].getNature() == 8 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-2][x].getNature() == 8 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        # saut de pions
-                        if self.grid[y][x-4].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x-4].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y][x+4].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
-                            self.grid[y][x+4].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y-4][x].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-4][x].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        if self.grid[y+4][x].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+4][x].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        # déplacements en diagonale ( pion adverse + barrière  )
-                        if self.grid[y+2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        # déplacement en diagonale ( pion adverse + pion adverse )
-                        # verticale
-                        if self.grid[y+2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-                        # Horizontale
-                        if self.grid[y-2][x-2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y-2][x+2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y-2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x-2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x-2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-                        if self.grid[y+2][x+2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
-                            self.grid[y+2][x+2].setNature(0)
-                            self.grid[y][x].setNature(8)
-                            self.nextPlayer()
-                            return
-
-    def placeWall(self, x, y):
-        # clique à la limite droite du tableau
-        while (x == self.gridSize-1):
-            return self.handlingEvents()
-
-        gridCopy = copy.deepcopy(self.grid)
-        # fonction placement de murs
-        if (self.currentPlayer == 1 and self.player1barriers > 0) or (self.currentPlayer == 2 and self.player2barriers > 0) or (self.currentPlayer == 3 and self.player3barriers > 0) or (self.currentPlayer == 4 and self.player4Barriers > 0):
-
+        if self.ShowSettingsMenu == False:
+            # fonction déplacement des pions
             for i in range(self.gridSize):
                 for j in range(self.gridSize):
+                    if 0 <= x < self.gridSize+2 and 0 <= y < self.gridSize+2:
 
-                    if 0 <= x+2 < self.gridSize+2 and 0 <= y+2 < self.gridSize+2:
-                        if self.grid[x][y].getNature() == 1 and self.grid[y][x].getNature() != 10 and self.grid[y][x].getNature() != 20 and self.grid[y+1][x].getNature() != 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x].getNature() != 10 and self.grid[y+2][x].getNature() != 20:
-
-                            self.grid[y][x].setNature(10)
-                            self.grid[y+1][x].setNature(10)
-                            self.grid[y+2][x].setNature(10)
-                            if self.verifyPath(gridCopy) is True:
-                                self.horizontalWallDrawing(x, y)
-                                if self.currentPlayer == 1:
-                                    self.player1barriers -= 1
-                                elif self.currentPlayer == 2:
-                                    self.player2barriers -= 1
-                                elif self.currentPlayer == 3:
-                                    self.player3barriers -= 1
-                                elif self.currentPlayer == 4:
-                                    self.player4Barriers -= 1
+                        if self.currentPlayer == 1:
+                            # déplacments normaux (gauche , droite , haut , bat)
+                            if self.grid[y][x-2].getNature() == 4 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+2].getNature() == 4 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+2][x].getNature() == 4 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-2][x].getNature() == 4 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x].setNature(0)
+                                self.grid[y][x].setNature(4)
                                 self.nextPlayer()
                                 return
 
-                        elif self.grid[x][y].getNature() == 2 and self.grid[y][x].getNature() != 20 and self.grid[y][x].getNature() != 10 and self.grid[y][x+1].getNature() != 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y][x+2].getNature() != 20 and self.grid[y][x+2].getNature() != 10:
-                            self.grid[y][x].setNature(20)
-                            self.grid[y][x+1].setNature(20)
-                            self.grid[y][x+2].setNature(20)
-                            if self.verifyPath(gridCopy) is True:
-                                self.verticalWallDrawing(x, y)
-                                if self.currentPlayer == 1:
-                                    self.player1barriers -= 1
-                                elif self.currentPlayer == 2:
-                                    self.player2barriers -= 1
-                                elif self.currentPlayer == 3:
-                                    self.player3barriers -= 1
-                                elif self.currentPlayer == 4:
-                                    self.player4Barriers -= 1
+                            # saut de pions
+                            if self.grid[y][x-4].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-4].setNature(0)
+                                self.grid[y][x].setNature(4)
                                 self.nextPlayer()
                                 return
+                            if self.grid[y][x+4].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+4].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-4][x].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-4][x].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+4][x].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+4][x].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            # déplacements en diagonale ( pion adverse + barrière )
+                            if self.grid[y+2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            # déplacement en diagonale ( pion adverse + pion adverse )
+                            # verticale
+                            if self.grid[y+2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            # Horizontale
+                            if self.grid[y-2][x-2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(4)
+                                self.nextPlayer()
+                                return
+
+                        if self.currentPlayer == 2:
+                            # déplacments normaux (gauche , droite , haut , bat)
+                            # verticale
+                            if self.grid[y][x-2].getNature() == 5 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+2].getNature() == 5 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+2][x].getNature() == 5 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-2][x].getNature() == 5 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            # saut de pions
+                            if self.grid[y][x-4].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-4].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+4].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+4].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-4][x].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-4][x].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+4][x].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+4][x].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            # déplacements en diagonale ( pion adverse + barrière  )
+                            if self.grid[y+2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            # déplacement en diagonale ( pion adverse + pion adverse )
+                            # verticale
+                            if self.grid[y+2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            # Horizontale
+                            if self.grid[y-2][x-2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(5)
+                                self.nextPlayer()
+                                return
+
+                        if self.currentPlayer == 3:
+                            # déplacments normaux (gauche , droite , haut , bat)
+                            if self.grid[y][x-2].getNature() == 6 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+2].getNature() == 6 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+2][x].getNature() == 6 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-2][x].getNature() == 6 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            # saut de pions
+                            if self.grid[y][x-4].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-4].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+4].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+4].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-4][x].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-4][x].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+4][x].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+4][x].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            # déplacements en diagonale ( pion adverse + barrière  )
+                            if self.grid[y+2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            # déplacement en diagonale ( pion adverse + pion adverse )
+                            if self.grid[y+2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            # Horizontale
+                            if self.grid[y-2][x-2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(6)
+                                self.nextPlayer()
+                                return
+
+                        if self.currentPlayer == 4:
+                            # déplacments normaux (gauche , droite , haut , bat)
+                            if self.grid[y][x-2].getNature() == 8 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+2].getNature() == 8 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+2][x].getNature() == 8 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-2][x].getNature() == 8 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            # saut de pions
+                            if self.grid[y][x-4].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x-4].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y][x+4].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
+                                self.grid[y][x+4].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y-4][x].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-4][x].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            if self.grid[y+4][x].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+4][x].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            # déplacements en diagonale ( pion adverse + barrière  )
+                            if self.grid[y+2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            # déplacement en diagonale ( pion adverse + pion adverse )
+                            # verticale
+                            if self.grid[y+2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+                            # Horizontale
+                            if self.grid[y-2][x-2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y-2][x+2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y-2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x-2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x-2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+                            if self.grid[y+2][x+2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
+                                self.grid[y+2][x+2].setNature(0)
+                                self.grid[y][x].setNature(8)
+                                self.nextPlayer()
+                                return
+
+    def placeWall(self, x, y):
+        if self.ShowSettingsMenu == False:
+            # clique à la limite droite du tableau
+            while (x == self.gridSize-1):
+                return self.handlingEvents()
+
+            gridCopy = copy.deepcopy(self.grid)
+            # fonction placement de murs
+            if (self.currentPlayer == 1 and self.player1barriers > 0) or (self.currentPlayer == 2 and self.player2barriers > 0) or (self.currentPlayer == 3 and self.player3barriers > 0) or (self.currentPlayer == 4 and self.player4Barriers > 0):
+
+                for i in range(self.gridSize):
+                    for j in range(self.gridSize):
+
+                        if 0 <= x+2 < self.gridSize+2 and 0 <= y+2 < self.gridSize+2:
+                            if self.grid[x][y].getNature() == 1 and self.grid[y][x].getNature() != 10 and self.grid[y][x].getNature() != 20 and self.grid[y+1][x].getNature() != 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x].getNature() != 10 and self.grid[y+2][x].getNature() != 20:
+
+                                self.grid[y][x].setNature(10)
+                                self.grid[y+1][x].setNature(10)
+                                self.grid[y+2][x].setNature(10)
+                                if self.verifyPath(gridCopy) is True:
+                                    self.horizontalWallDrawing(x, y)
+                                    if self.currentPlayer == 1:
+                                        self.player1barriers -= 1
+                                    elif self.currentPlayer == 2:
+                                        self.player2barriers -= 1
+                                    elif self.currentPlayer == 3:
+                                        self.player3barriers -= 1
+                                    elif self.currentPlayer == 4:
+                                        self.player4Barriers -= 1
+                                    self.nextPlayer()
+                                    return
+
+                            elif self.grid[x][y].getNature() == 2 and self.grid[y][x].getNature() != 20 and self.grid[y][x].getNature() != 10 and self.grid[y][x+1].getNature() != 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y][x+2].getNature() != 20 and self.grid[y][x+2].getNature() != 10:
+                                self.grid[y][x].setNature(20)
+                                self.grid[y][x+1].setNature(20)
+                                self.grid[y][x+2].setNature(20)
+                                if self.verifyPath(gridCopy) is True:
+                                    self.verticalWallDrawing(x, y)
+                                    if self.currentPlayer == 1:
+                                        self.player1barriers -= 1
+                                    elif self.currentPlayer == 2:
+                                        self.player2barriers -= 1
+                                    elif self.currentPlayer == 3:
+                                        self.player3barriers -= 1
+                                    elif self.currentPlayer == 4:
+                                        self.player4Barriers -= 1
+                                    self.nextPlayer()
+                                    return
 
     def verifyPath(self, gridCopy):
         # vérification des chemins
@@ -1026,69 +1076,70 @@ class jeu:
                 return True
 
     def displayHover(self):
-        for line in range(self.gridSize):
-            for col in range(self.gridSize):
-                # hover mur horizontaux
-                if self.grid[col][line].getNature() == 1 and self.grid[col][line+1].getNature() == 7 and self.grid[col][line+2].getNature() == 1:
-                    x = self.indexToPixels(line // 2)
-                    y = self.indexToPixels(col // 2)
-                    self.wallRect = pygame.Rect(
-                        x + ((self.screenSizeX - self.boardSizeX) // 2), y+self.cellSize, self.cellSize, self.wallSize)
-                    self.horizontalWallHoverCopy = self.horizontalWallHover.copy()
-                    pos = pygame.mouse.get_pos()
+        if self.ShowSettingsMenu == False:
+            for line in range(self.gridSize):
+                for col in range(self.gridSize):
+                    # hover mur horizontaux
+                    if self.grid[col][line].getNature() == 1 and self.grid[col][line+1].getNature() == 7 and self.grid[col][line+2].getNature() == 1:
+                        x = self.indexToPixels(line // 2)
+                        y = self.indexToPixels(col // 2)
+                        self.wallRect = pygame.Rect(
+                            x + ((self.screenSizeX - self.boardSizeX) // 2), y+self.cellSize, self.cellSize, self.wallSize)
+                        self.horizontalWallHoverCopy = self.horizontalWallHover.copy()
+                        pos = pygame.mouse.get_pos()
 
-                    if self.wallRect.collidepoint(pos):
-                        self.horizontalWallHoverCopy.fill(self.black)
-                    else:
-                        self.horizontalWallHoverCopy.set_colorkey(
-                            self.horizontalWallHoverCopy.get_at((0, 0)))
+                        if self.wallRect.collidepoint(pos):
+                            self.horizontalWallHoverCopy.fill(self.black)
+                        else:
+                            self.horizontalWallHoverCopy.set_colorkey(
+                                self.horizontalWallHoverCopy.get_at((0, 0)))
 
-                    self.screen.blit(self.horizontalWallHoverCopy, (x + ((self.screenSizeX - self.boardSizeX) //
+                        self.screen.blit(self.horizontalWallHoverCopy, (x + ((self.screenSizeX - self.boardSizeX) //
+                                                                             2), y+self.cellSize))
+
+                    # hover mur verticaux
+                    if self.grid[col][line].getNature() == 2 and self.grid[col+1][line].getNature() == 7 and self.grid[col+2][line].getNature() == 2:
+                        x = self.indexToPixels(line // 2)
+                        y = self.indexToPixels(col // 2)
+                        self.wallRect = pygame.Rect(
+                            x + ((self.screenSizeX - self.boardSizeX) // 2)+self.cellSize, y, self.wallSize, self.cellSize)
+                        self.verticalWallHoverCopy = self.verticalWallHover.copy()
+                        pos = pygame.mouse.get_pos()
+
+                        if self.wallRect.collidepoint(pos):
+                            self.verticalWallHoverCopy.fill(self.black)
+                        else:
+                            self.verticalWallHoverCopy.set_colorkey(
+                                self.verticalWallHoverCopy.get_at((0, 0)))
+                            # self.verticalWallHoverCopy.fill(self.green)
+
+                        self.screen.blit(self.verticalWallHoverCopy, (x + ((self.screenSizeX - self.boardSizeX) //
+                                                                           2)+self.cellSize, y))
+
+                    # hover des cellules du board
+                    if self.grid[col][line].getNature() == 0:
+                        x = self.indexToPixels(line // 2)
+                        y = self.indexToPixels(col // 2)
+                        self.cellRect = pygame.Rect(
+                            x + ((self.screenSizeX - self.boardSizeX) // 2), y, self.cellSize, self.cellSize)
+                        self.cellHoverCopy = self.cellHover.copy()
+                        self.cellHoverBorderCopy = self.cellHoverBorder.copy()
+                        pos = pygame.mouse.get_pos()
+
+                        if self.cellRect.collidepoint(pos):
+                            self.cellHoverCopy.fill(self.Red)
+                            self.cellHoverBorderCopy.fill(self.darkRed)
+                        else:
+                            self.cellHoverCopy.set_colorkey(
+                                self.cellHoverCopy.get_at((0, 0)))
+
+                            self.cellHoverBorderCopy.set_colorkey(
+                                self.cellHoverBorderCopy.get_at((0, 0)))
+
+                        self.screen.blit(self.cellHoverCopy, (x + ((self.screenSizeX - self.boardSizeX) //
+                                                                   2), y))
+                        self.screen.blit(self.cellHoverBorderCopy, (x + ((self.screenSizeX - self.boardSizeX) //
                                                                          2), y+self.cellSize))
-
-                # hover mur verticaux
-                if self.grid[col][line].getNature() == 2 and self.grid[col+1][line].getNature() == 7 and self.grid[col+2][line].getNature() == 2:
-                    x = self.indexToPixels(line // 2)
-                    y = self.indexToPixels(col // 2)
-                    self.wallRect = pygame.Rect(
-                        x + ((self.screenSizeX - self.boardSizeX) // 2)+self.cellSize, y, self.wallSize, self.cellSize)
-                    self.verticalWallHoverCopy = self.verticalWallHover.copy()
-                    pos = pygame.mouse.get_pos()
-
-                    if self.wallRect.collidepoint(pos):
-                        self.verticalWallHoverCopy.fill(self.black)
-                    else:
-                        self.verticalWallHoverCopy.set_colorkey(
-                            self.verticalWallHoverCopy.get_at((0, 0)))
-                        # self.verticalWallHoverCopy.fill(self.green)
-
-                    self.screen.blit(self.verticalWallHoverCopy, (x + ((self.screenSizeX - self.boardSizeX) //
-                                                                       2)+self.cellSize, y))
-
-                # hover des cellules du board
-                if self.grid[col][line].getNature() == 0:
-                    x = self.indexToPixels(line // 2)
-                    y = self.indexToPixels(col // 2)
-                    self.cellRect = pygame.Rect(
-                        x + ((self.screenSizeX - self.boardSizeX) // 2), y, self.cellSize, self.cellSize)
-                    self.cellHoverCopy = self.cellHover.copy()
-                    self.cellHoverBorderCopy = self.cellHoverBorder.copy()
-                    pos = pygame.mouse.get_pos()
-
-                    if self.cellRect.collidepoint(pos):
-                        self.cellHoverCopy.fill(self.Red)
-                        self.cellHoverBorderCopy.fill(self.darkRed)
-                    else:
-                        self.cellHoverCopy.set_colorkey(
-                            self.cellHoverCopy.get_at((0, 0)))
-
-                        self.cellHoverBorderCopy.set_colorkey(
-                            self.cellHoverBorderCopy.get_at((0, 0)))
-
-                    self.screen.blit(self.cellHoverCopy, (x + ((self.screenSizeX - self.boardSizeX) //
-                                                               2), y))
-                    self.screen.blit(self.cellHoverBorderCopy, (x + ((self.screenSizeX - self.boardSizeX) //
-                                                                     2), y+self.cellSize))
 
     def displayScreen(self):  # affichage de l'écran pygame et de la  grille de jeu
         self.screen.fill(self.beige6)
@@ -1448,194 +1499,194 @@ class jeu:
                         self.board, self.lightBrown, (x, y, width, height))
 
     def drawPlayerDirection(self):  # affichage des directions
+        if self.ShowSettingsMenu == False:
 
-        if not self.checkWin():
+            if not self.checkWin():
+                if self.currentPlayer == 1:
+                    for line in range(self.gridSize):
+                        for col in range(self.gridSize):
+                            hover = False
+                            # direction normales (droite , gauche , haut , bas)
+                            if col-2 < self.gridSize:
+                                if self.grid[col-2][line].getNature() == 4 and self.grid[col-1][line].getNature() != 20 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
 
-            if self.currentPlayer == 1:
-                for line in range(self.gridSize):
-                    for col in range(self.gridSize):
-                        hover = False
-                        # direction normales (droite , gauche , haut , bas)
-                        if col-2 < self.gridSize:
-                            if self.grid[col-2][line].getNature() == 4 and self.grid[col-1][line].getNature() != 20 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                            if col+2 < self.gridSize:
+                                if self.grid[col+2][line].getNature() == 4 and self.grid[col+1][line].getNature() != 20 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            if line+2 < self.gridSize:
+                                if self.grid[col][line+2].getNature() == 4 and self.grid[col][line+1].getNature() != 10 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            if line-2 < self.gridSize:
+                                if self.grid[col][line-2].getNature() == 4 and self.grid[col][line-1].getNature() != 10 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            # direction saut de pion adverse
+                            if col-4 < self.gridSize and col-2 < self.gridSize:
+                                if self.grid[col-4][line].getNature() == 4 and (self.grid[col-2][line].getNature() == 5 or self.grid[col-2][line].getNature() == 6 or self.grid[col-2][line].getNature() == 8) and self.grid[col-1][line].getNature() != 20 and self.grid[col-3][line].getNature() != 20 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            if col+4 < self.gridSize and col+2 < self.gridSize:
+                                if self.grid[col+4][line].getNature() == 4 and (self.grid[col+2][line].getNature() == 5 or self.grid[col+2][line].getNature() == 6 or self.grid[col+2][line].getNature() == 8) and self.grid[col+1][line].getNature() != 20 and self.grid[col+3][line].getNature() != 20 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            if line-4 < self.gridSize and line-2 < self.gridSize:
+                                if self.grid[col][line-4].getNature() == 4 and (self.grid[col][line-2].getNature() == 5 or self.grid[col][line-2].getNature() == 6 or self.grid[col][line-2].getNature() == 8) and self.grid[col][line-1].getNature() != 10 and self.grid[col][line-3].getNature() != 10 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            if line+4 < self.gridSize and line+2 < self.gridSize:
+                                if self.grid[col][line+4].getNature() == 4 and (self.grid[col][line+2].getNature() == 5 or self.grid[col][line+2].getNature() == 6 or self.grid[col][line+2].getNature() == 8) and self.grid[col][line+1].getNature() != 10 and self.grid[col][line+3].getNature() != 10 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                                    hover = True
+                                    x = self.indexToPixels(line // 2)
+                                    y = self.indexToPixels(col // 2)
+                                    self.cell.fill(self.beige3)
+                                    self.board.blit(self.cell, (x, y))
+
+                            # directions déplacement en diagonale ( pion adverse + barrière )
+                            if self.grid[col][line].getNature() == 0 and self.grid[col-1][line+2].getNature() == 20 and self.grid[col][line+2].getNature() != 0 and self.grid[col+2][line+2].getNature() == 4 and self.grid[col+1][line+2].getNature() != 20 and self.grid[col][line+1].getNature() != 10:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        if col+2 < self.gridSize:
-                            if self.grid[col+2][line].getNature() == 4 and self.grid[col+1][line].getNature() != 20 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                            if self.grid[col][line].getNature() == 0 and self.grid[col+1][line-2].getNature() == 20 and self.grid[col][line-2].getNature() != 0 and self.grid[col-2][line-2].getNature() == 4 and self.grid[col-1][line-2].getNature() != 20 and self.grid[col][line-1].getNature() != 10:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        if line+2 < self.gridSize:
-                            if self.grid[col][line+2].getNature() == 4 and self.grid[col][line+1].getNature() != 10 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                            if self.grid[col][line].getNature() == 0 and self.grid[col+1][line+2].getNature() == 20 and self.grid[col][line+2].getNature() != 0 and self.grid[col-2][line+2].getNature() == 4 and self.grid[col-1][line+2].getNature() != 20 and self.grid[col][line+1].getNature() != 10:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        if line-2 < self.gridSize:
-                            if self.grid[col][line-2].getNature() == 4 and self.grid[col][line-1].getNature() != 10 and (self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8):
+                            if self.grid[col][line].getNature() == 0 and self.grid[col-1][line-2].getNature() == 20 and self.grid[col][line-2].getNature() != 0 and self.grid[col+2][line-2].getNature() == 4 and self.grid[col+1][line-2].getNature() != 20 and self.grid[col][line-1].getNature() != 10:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        # direction saut de pion adverse
-                        if col-4 < self.gridSize and col-2 < self.gridSize:
-                            if self.grid[col-4][line].getNature() == 4 and (self.grid[col-2][line].getNature() == 5 or self.grid[col-2][line].getNature() == 6 or self.grid[col-2][line].getNature() == 8) and self.grid[col-1][line].getNature() != 20 and self.grid[col-3][line].getNature() != 20 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                            if self.grid[col][line].getNature() == 0 and self.grid[col+2][line-1].getNature() == 10 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line+2].getNature() == 4 and self.grid[col+2][line+1].getNature() != 10 and self.grid[col+1][line].getNature() != 20:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        if col+4 < self.gridSize and col+2 < self.gridSize:
-                            if self.grid[col+4][line].getNature() == 4 and (self.grid[col+2][line].getNature() == 5 or self.grid[col+2][line].getNature() == 6 or self.grid[col+2][line].getNature() == 8) and self.grid[col+1][line].getNature() != 20 and self.grid[col+3][line].getNature() != 20 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                            if self.grid[col][line].getNature() == 0 and self.grid[col+2][line+1].getNature() == 10 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line-2].getNature() == 4 and self.grid[col+2][line-1].getNature() != 10 and self.grid[col+1][line].getNature() != 20:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        if line-4 < self.gridSize and line-2 < self.gridSize:
-                            if self.grid[col][line-4].getNature() == 4 and (self.grid[col][line-2].getNature() == 5 or self.grid[col][line-2].getNature() == 6 or self.grid[col][line-2].getNature() == 8) and self.grid[col][line-1].getNature() != 10 and self.grid[col][line-3].getNature() != 10 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                            if self.grid[col][line].getNature() == 0 and self.grid[col-2][line+1].getNature() == 10 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line-2].getNature() == 4 and self.grid[col-2][line-1].getNature() != 10 and self.grid[col-1][line].getNature() != 20:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        if line+4 < self.gridSize and line+2 < self.gridSize:
-                            if self.grid[col][line+4].getNature() == 4 and (self.grid[col][line+2].getNature() == 5 or self.grid[col][line+2].getNature() == 6 or self.grid[col][line+2].getNature() == 8) and self.grid[col][line+1].getNature() != 10 and self.grid[col][line+3].getNature() != 10 and self.grid[col][line].getNature() != 5 and self.grid[col][line].getNature() != 6 and self.grid[col][line].getNature() != 8:
+                            if self.grid[col][line].getNature() == 0 and self.grid[col-2][line-1].getNature() == 10 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line+2].getNature() == 4 and self.grid[col-2][line+1].getNature() != 10 and self.grid[col-1][line].getNature() != 20:
                                 hover = True
                                 x = self.indexToPixels(line // 2)
                                 y = self.indexToPixels(col // 2)
                                 self.cell.fill(self.beige3)
                                 self.board.blit(self.cell, (x, y))
 
-                        # directions déplacement en diagonale ( pion adverse + barrière )
-                        if self.grid[col][line].getNature() == 0 and self.grid[col-1][line+2].getNature() == 20 and self.grid[col][line+2].getNature() != 0 and self.grid[col+2][line+2].getNature() == 4 and self.grid[col+1][line+2].getNature() != 20 and self.grid[col][line+1].getNature() != 10:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            # déplacement en diagonale ( pion adverse + pion adverse )
+                            # verticale
+                            if self.grid[col+2][line+2].getNature() == 4 and self.grid[col][line+2].getNature() != 0 and self.grid[col-2][line+2].getNature() != 0 and self.grid[col][line+1].getNature() != 10 and self.grid[col+1][line+2].getNature() != 20 and self.grid[col-1][line+2].getNature() != 20 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col+1][line-2].getNature() == 20 and self.grid[col][line-2].getNature() != 0 and self.grid[col-2][line-2].getNature() == 4 and self.grid[col-1][line-2].getNature() != 20 and self.grid[col][line-1].getNature() != 10:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            if self.grid[col+2][line-2].getNature() == 4 and self.grid[col][line-2].getNature() != 0 and self.grid[col-2][line-2].getNature() != 0 and self.grid[col][line-1].getNature() != 10 and self.grid[col+1][line-2].getNature() != 20 and self.grid[col-1][line-2].getNature() != 20 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col+1][line+2].getNature() == 20 and self.grid[col][line+2].getNature() != 0 and self.grid[col-2][line+2].getNature() == 4 and self.grid[col-1][line+2].getNature() != 20 and self.grid[col][line+1].getNature() != 10:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            if self.grid[col-2][line+2].getNature() == 4 and self.grid[col][line+2].getNature() != 0 and self.grid[col+2][line+2].getNature() != 0 and self.grid[col][line+1].getNature() != 10 and self.grid[col-1][line+2].getNature() != 20 and self.grid[col+1][line+2].getNature() != 20 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col-1][line-2].getNature() == 20 and self.grid[col][line-2].getNature() != 0 and self.grid[col+2][line-2].getNature() == 4 and self.grid[col+1][line-2].getNature() != 20 and self.grid[col][line-1].getNature() != 10:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            if self.grid[col-2][line-2].getNature() == 4 and self.grid[col][line-2].getNature() != 0 and self.grid[col+2][line-2].getNature() != 0 and self.grid[col][line-1].getNature() != 10 and self.grid[col+1][line-2].getNature() != 20 and self.grid[col-1][line-2].getNature() != 20 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col+2][line-1].getNature() == 10 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line+2].getNature() == 4 and self.grid[col+2][line+1].getNature() != 10 and self.grid[col+1][line].getNature() != 20:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            # Horizontale
+                            if self.grid[col-2][line-2].getNature() == 4 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line+2].getNature() != 0 and self.grid[col-1][line].getNature() != 20 and self.grid[col-2][line-1].getNature() != 10 and self.grid[col-2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col+2][line+1].getNature() == 10 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line-2].getNature() == 4 and self.grid[col+2][line-1].getNature() != 10 and self.grid[col+1][line].getNature() != 20:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            if self.grid[col-2][line+2].getNature() == 4 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line-2].getNature() != 0 and self.grid[col-1][line].getNature() != 20 and self.grid[col-2][line-1].getNature() != 10 and self.grid[col-2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col-2][line+1].getNature() == 10 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line-2].getNature() == 4 and self.grid[col-2][line-1].getNature() != 10 and self.grid[col-1][line].getNature() != 20:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            if self.grid[col+2][line-2].getNature() == 4 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line+2].getNature() != 0 and self.grid[col+1][line].getNature() != 20 and self.grid[col+2][line-1].getNature() != 10 and self.grid[col+2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
-                        if self.grid[col][line].getNature() == 0 and self.grid[col-2][line-1].getNature() == 10 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line+2].getNature() == 4 and self.grid[col-2][line+1].getNature() != 10 and self.grid[col-1][line].getNature() != 20:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        # déplacement en diagonale ( pion adverse + pion adverse )
-                        # verticale
-                        if self.grid[col+2][line+2].getNature() == 4 and self.grid[col][line+2].getNature() != 0 and self.grid[col-2][line+2].getNature() != 0 and self.grid[col][line+1].getNature() != 10 and self.grid[col+1][line+2].getNature() != 20 and self.grid[col-1][line+2].getNature() != 20 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        if self.grid[col+2][line-2].getNature() == 4 and self.grid[col][line-2].getNature() != 0 and self.grid[col-2][line-2].getNature() != 0 and self.grid[col][line-1].getNature() != 10 and self.grid[col+1][line-2].getNature() != 20 and self.grid[col-1][line-2].getNature() != 20 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        if self.grid[col-2][line+2].getNature() == 4 and self.grid[col][line+2].getNature() != 0 and self.grid[col+2][line+2].getNature() != 0 and self.grid[col][line+1].getNature() != 10 and self.grid[col-1][line+2].getNature() != 20 and self.grid[col+1][line+2].getNature() != 20 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        if self.grid[col-2][line-2].getNature() == 4 and self.grid[col][line-2].getNature() != 0 and self.grid[col+2][line-2].getNature() != 0 and self.grid[col][line-1].getNature() != 10 and self.grid[col+1][line-2].getNature() != 20 and self.grid[col-1][line-2].getNature() != 20 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        # Horizontale
-                        if self.grid[col-2][line-2].getNature() == 4 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line+2].getNature() != 0 and self.grid[col-1][line].getNature() != 20 and self.grid[col-2][line-1].getNature() != 10 and self.grid[col-2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        if self.grid[col-2][line+2].getNature() == 4 and self.grid[col-2][line].getNature() != 0 and self.grid[col-2][line-2].getNature() != 0 and self.grid[col-1][line].getNature() != 20 and self.grid[col-2][line-1].getNature() != 10 and self.grid[col-2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        if self.grid[col+2][line-2].getNature() == 4 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line+2].getNature() != 0 and self.grid[col+1][line].getNature() != 20 and self.grid[col+2][line-1].getNature() != 10 and self.grid[col+2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
-
-                        if self.grid[col+2][line+2].getNature() == 4 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line-2].getNature() != 0 and self.grid[col+1][line].getNature() != 20 and self.grid[col+2][line-1].getNature() != 10 and self.grid[col+2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
-                            hover = True
-                            x = self.indexToPixels(line // 2)
-                            y = self.indexToPixels(col // 2)
-                            self.cell.fill(self.beige3)
-                            self.board.blit(self.cell, (x, y))
+                            if self.grid[col+2][line+2].getNature() == 4 and self.grid[col+2][line].getNature() != 0 and self.grid[col+2][line-2].getNature() != 0 and self.grid[col+1][line].getNature() != 20 and self.grid[col+2][line-1].getNature() != 10 and self.grid[col+2][line+1].getNature() != 10 and self.grid[col][line].getNature() == 0:
+                                hover = True
+                                x = self.indexToPixels(line // 2)
+                                y = self.indexToPixels(col // 2)
+                                self.cell.fill(self.beige3)
+                                self.board.blit(self.cell, (x, y))
 
             if self.currentPlayer == 2:
                 for line in range(self.gridSize):
@@ -2215,9 +2266,9 @@ class jeu:
             popupsurfaceX/2, popupsurfaceY-80/2)
 
         fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
-        okMessage = fontOk.render('OK', True, self.whitheSmoke2)
-        okMessage_rect = okMessage.get_rect()
-        okMessage_rect.center = ((80//2, (80/2)//2))
+        audioMessage = fontOk.render('OK', True, self.whitheSmoke2)
+        audioMessage_rect = audioMessage.get_rect()
+        audioMessage_rect.center = ((80//2, (80/2)//2))
 
         winner = self.currentPlayer-1
         if winner == 0:
@@ -2238,7 +2289,7 @@ class jeu:
         winImage_rect.center = (popupsurfaceX//2, 80//4)
         # popupSurface.blit(winImage, winImage_rect)
 
-        exitSurface.blit(okMessage, okMessage_rect)
+        exitSurface.blit(audioMessage, audioMessage_rect)
         popupSurface.blit(winnerMessage, winnerMessage_rect)
         popupSurface.blit(exitSurface,  (popupsurfaceX /
                                          2-80/2, popupsurfaceY-self.wallSize*5))
@@ -2251,6 +2302,88 @@ class jeu:
         self.screen.blit(self.board, ((self.screenSizeX - self.boardSizeX) //
                          2, (self.screenSizeY - self.boardSizeY) // 2))
         pygame.display.flip()
+
+    def displaySettingsMenu(self):
+
+        self.popupsurfaceX = (self.boardSizeX-80*2-self.wallSize*2)/2
+        self.popupsurfaceY = self.boardSizeY/4
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.black)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color2 = (self.black2)
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5)
+
+        self.sfxRect = pygame.Rect(
+            600, 274, 80, 80/2)
+        self.sfxSurface = pygame.Surface((80, 80/2))
+        borderaudio = pygame.Surface((80, self.wallSize//2))
+
+        if self.sfx == False:
+            self.sfxSurface.fill(self.green)
+            borderaudio.fill(self.darkGreen)
+        if self.sfx == True:
+            self.sfxSurface.fill(self.Red)
+            borderaudio.fill(self.darkRed)
+
+        self.sfxSurfaceRect = self.sfxSurface.get_rect()
+        self.sfxSurfaceRect.center = (
+            self.popupsurfaceX/2, self.popupsurfaceY-80/2)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        sfxMessage = fontOk.render('sfx', True, self.whiteSmoke)
+        sfxMessage_rect = sfxMessage.get_rect()
+        sfxMessage_rect.center = ((80//2, (80/2)//2))
+        self.sfxSurface.blit(sfxMessage, sfxMessage_rect)
+        self.popupsurface.blit(self.sfxSurface,  (self.popupsurfaceX /
+                                                  2-80/2, 10+20))
+        self.popupsurface.blit(
+            borderaudio, (self.popupsurfaceX/2-80/2,
+                          10+80/2+20))
+
+        self.audioRect = pygame.Rect(
+            600, 334, 80, 80/2)
+        self.audioSurface = pygame.Surface((80, 80/2))
+        borderaudio = pygame.Surface((80, self.wallSize//2))
+        if self.audio == False:
+            self.audioSurface.fill(self.green)
+            borderaudio.fill(self.darkGreen)
+        if self.audio == True:
+            self.audioSurface.fill(self.Red)
+            borderaudio.fill(self.darkRed)
+
+        self.audioSurfaceRect = self.audioSurface.get_rect()
+        self.audioSurfaceRect.center = (
+            self.popupsurfaceX/2, self.popupsurfaceY-80/2)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        audioMessage = fontOk.render('audio', True, self.whiteSmoke)
+        audioMessage_rect = audioMessage.get_rect()
+        audioMessage_rect.center = ((80//2, (80/2)//2))
+        self.audioSurface.blit(audioMessage, audioMessage_rect)
+        self.popupsurface.blit(self.audioSurface,  (self.popupsurfaceX /
+                                                    2-80/2, 10+80/2+self.wallSize//2+self.wallSize+25))
+        self.popupsurface.blit(
+            borderaudio, (self.popupsurfaceX/2-80/2,
+                          10+80/2+self.wallSize//2+self.wallSize+80/2+25))
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        pygame.display.update()
 
     def closeWindow(self):
         pygame.quit()
@@ -2270,6 +2403,8 @@ class jeu:
                     self.displayScreen()
                     self.drawPlayerDirection()
                     self.displayHover()
+                    if self.ShowSettingsMenu == True:
+                        self.displaySettingsMenu()
                     pygame.display.flip()
                     self.clock.tick(30)
                 if self.infosPlayers[player]["nature"] == "bot":

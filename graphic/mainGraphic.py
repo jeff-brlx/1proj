@@ -343,6 +343,7 @@ class jeu:
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
+
                 if self.exitRect.collidepoint(pos):
                     self.closeWindow()
                 if self.settingsRect.collidepoint(pos):

@@ -320,10 +320,15 @@ class jeu:
             (self.wallSize, self.cellSize*2+self.wallSize))
         self.horizontalWallHover = pygame.Surface(
             (self.cellSize*2+self.wallSize, self.wallSize))
-        # son
-        self.audio = False
-        self.sfx = False
+        # moveSong
+        self.audio = True
+        self.sfx = True
         self.ShowSettingsMenu = False
+
+        self.moveSong = pygame.mixer.Sound(
+            'assets\sounds\MenuSelectionClick.wav')
+        self.wallSong = pygame.mixer.Sound(
+            'assets/sounds/nutfall.wav')
 
     def getCurrentPlayer(self):
         return self.currentPlayer
@@ -386,7 +391,7 @@ class jeu:
                     if self.winExitRect.collidepoint(pos):
                         self.closeWindow()
 
-                # après un click de souris sur le plateau les coordonnées de grille correspondantes sont générées
+                # après un click de souris sur le plateau les coordonnées de grille correspondantes moveSongt générées
                 x, y = pos
                 if self.fakeGridSize == 11:
                     soustraX = 375
@@ -427,21 +432,25 @@ class jeu:
                             if self.grid[y][x-2].getNature() == 4 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+2].getNature() == 4 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+2][x].getNature() == 4 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-2][x].getNature() == 4 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -449,21 +458,25 @@ class jeu:
                             if self.grid[y][x-4].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-4].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+4].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+4].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-4][x].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-4][x].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+4][x].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+4][x].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -471,48 +484,56 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -521,24 +542,28 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 4 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 4 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -546,24 +571,28 @@ class jeu:
                             if self.grid[y-2][x-2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 4 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 4 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(4)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -573,21 +602,25 @@ class jeu:
                             if self.grid[y][x-2].getNature() == 5 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+2].getNature() == 5 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+2][x].getNature() == 5 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-2][x].getNature() == 5 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -595,21 +628,25 @@ class jeu:
                             if self.grid[y][x-4].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-4].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+4].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+4].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-4][x].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-4][x].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+4][x].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+4][x].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -617,48 +654,56 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -667,24 +712,28 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 5 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 5 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -692,24 +741,28 @@ class jeu:
                             if self.grid[y-2][x-2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 5 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 5 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(5)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -718,21 +771,25 @@ class jeu:
                             if self.grid[y][x-2].getNature() == 6 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+2].getNature() == 6 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+2][x].getNature() == 6 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-2][x].getNature() == 6 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -740,21 +797,25 @@ class jeu:
                             if self.grid[y][x-4].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-4].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+4].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+4].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-4][x].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-4][x].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+4][x].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+4][x].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -762,48 +823,56 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -811,24 +880,28 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 6 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 6 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -836,24 +909,28 @@ class jeu:
                             if self.grid[y-2][x-2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 6 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 6 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(6)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -862,21 +939,25 @@ class jeu:
                             if self.grid[y][x-2].getNature() == 8 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+2].getNature() == 8 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+2][x].getNature() == 8 and self.grid[y+1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-2][x].getNature() == 8 and self.grid[y-1][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -884,21 +965,25 @@ class jeu:
                             if self.grid[y][x-4].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y][x-1].getNature() == 2 and self.grid[y][x-3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x-4].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y][x+4].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y][x+1].getNature() == 2 and self.grid[y][x+3].getNature() == 2 and self.grid[y][x].getNature() == 0:
                                 self.grid[y][x+4].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y-4][x].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-1][x].getNature() == 1 and self.grid[y-3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-4][x].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             if self.grid[y+4][x].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+1][x].getNature() == 1 and self.grid[y+3][x].getNature() == 1 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+4][x].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -906,48 +991,56 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y-1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y-1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y+1][x+2].getNature() == 20 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y+1][x-2].getNature() == 20 and self.grid[y][x-1].getNature() != 10 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+1].getNature() == 10 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-1].getNature() == 10 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -956,48 +1049,56 @@ class jeu:
                             if self.grid[y+2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 8 and self.grid[y][x+2].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y][x+1].getNature() != 10 and self.grid[y-1][x+2].getNature() != 20 and self.grid[y+1][x+2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x-2].getNature() == 8 and self.grid[y][x-2].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y][x-1].getNature() != 10 and self.grid[y+1][x-2].getNature() != 20 and self.grid[y-1][x-2].getNature() != 20 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
                             # Horizontale
                             if self.grid[y-2][x-2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x+2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y-2][x+2].getNature() == 8 and self.grid[y-2][x].getNature() != 0 and self.grid[y-2][x-2].getNature() != 0 and self.grid[y-1][x].getNature() != 20 and self.grid[y-2][x-1].getNature() != 10 and self.grid[y-2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y-2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x-2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x+2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x-2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
                             if self.grid[y+2][x+2].getNature() == 8 and self.grid[y+2][x].getNature() != 0 and self.grid[y+2][x-2].getNature() != 0 and self.grid[y+1][x].getNature() != 20 and self.grid[y+2][x-1].getNature() != 10 and self.grid[y+2][x+1].getNature() != 10 and self.grid[y][x].getNature() == 0:
                                 self.grid[y+2][x+2].setNature(0)
                                 self.grid[y][x].setNature(8)
+                                self.playMoveSong()
                                 self.nextPlayer()
                                 return
 
@@ -1030,6 +1131,7 @@ class jeu:
                                         self.player3barriers -= 1
                                     elif self.currentPlayer == 4:
                                         self.player4Barriers -= 1
+                                    self.playWallSong()
                                     self.nextPlayer()
                                     return
 
@@ -1047,6 +1149,7 @@ class jeu:
                                         self.player3barriers -= 1
                                     elif self.currentPlayer == 4:
                                         self.player4Barriers -= 1
+                                    self.playWallSong()
                                     self.nextPlayer()
                                     return
 
@@ -1056,7 +1159,9 @@ class jeu:
             if self.pathFinding(4, self.grid) is False or self.pathFinding(5, self.grid) is False:
                 # la version précédente de la grille est restaurée si un pion est bloqué
                 self.grid = copy.deepcopy(gridCopy)
+                self.warning()
                 print("impossible to place this wall . Please try again")
+
             else:
                 return True
 
@@ -1064,7 +1169,9 @@ class jeu:
             if self.pathFinding(4, self.grid) is False or self.pathFinding(5, self.grid) is False or self.pathFinding(6, self.grid) is False:
                 # la version précédente de la grille est restaurée si un pion est bloqué
                 self.grid = copy.deepcopy(gridCopy)
+                self.warning()
                 print("impossible to place this wall . Please try again")
+
             else:
                 return True
 
@@ -1072,9 +1179,25 @@ class jeu:
             if self.pathFinding(4, self.grid) is False or self.pathFinding(5, self.grid) is False or self.pathFinding(6, self.grid) is False or self.pathFinding(8, self.grid) is False:
                 # la version précédente de la grille est restaurée si un pion est bloqué
                 self.grid = copy.deepcopy(gridCopy)
+                self.warning()
                 print("impossible to place this wall . Please try again")
+
             else:
                 return True
+
+    def playMoveSong(self):
+        if self.sfx == True:
+            self.moveSong.play()
+            # Attendre la fin de la lecture du son
+            pygame.time.wait(int(self.moveSong.get_length() * 1000))
+            self.moveSong.stop()
+
+    def playWallSong(self):
+        if self.sfx == True:
+            self.wallSong.play()
+            # Attendre la fin de la lecture du son
+            pygame.time.wait(int(self.wallSong.get_length() * 1000))
+            self.wallSong.stop()
 
     def displayHover(self):
         if self.ShowSettingsMenu == False:
@@ -1108,6 +1231,7 @@ class jeu:
                         pos = pygame.mouse.get_pos()
 
                         if self.wallRect.collidepoint(pos):
+
                             self.verticalWallHoverCopy.fill(self.black)
                         else:
                             self.verticalWallHoverCopy.set_colorkey(
@@ -1126,8 +1250,8 @@ class jeu:
                         self.cellHoverCopy = self.cellHover.copy()
                         self.cellHoverBorderCopy = self.cellHoverBorder.copy()
                         pos = pygame.mouse.get_pos()
-
                         if self.cellRect.collidepoint(pos):
+
                             self.cellHoverCopy.fill(self.Red)
                             self.cellHoverBorderCopy.fill(self.darkRed)
                         else:
@@ -2335,10 +2459,10 @@ class jeu:
         self.sfxSurface = pygame.Surface((80, 80/2))
         borderaudio = pygame.Surface((80, self.wallSize//2))
 
-        if self.sfx == False:
+        if self.sfx == True:
             self.sfxSurface.fill(self.green)
             borderaudio.fill(self.darkGreen)
-        if self.sfx == True:
+        if self.sfx == False:
             self.sfxSurface.fill(self.Red)
             borderaudio.fill(self.darkRed)
 
@@ -2360,10 +2484,10 @@ class jeu:
             600, 334, 80, 80/2)
         self.audioSurface = pygame.Surface((80, 80/2))
         borderaudio = pygame.Surface((80, self.wallSize//2))
-        if self.audio == False:
+        if self.audio == True:
             self.audioSurface.fill(self.green)
             borderaudio.fill(self.darkGreen)
-        if self.audio == True:
+        if self.audio == False:
             self.audioSurface.fill(self.Red)
             borderaudio.fill(self.darkRed)
 
@@ -2436,6 +2560,53 @@ class jeu:
             self.displayWinnerPopup()
             self.handlingEvents()
         self.displayWinner()
+
+    def warning(self):
+
+        self.popupsurfaceX = (self.boardSizeX-80-self.wallSize*2)/2
+        self.popupsurfaceY = self.boardSizeY/8
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.black)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color2 = (self.black2)
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5)
+
+        warningFont = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        warningMessage = warningFont.render(
+            'Impossible action. Please try again', True, self.whiteSmoke)
+        warningMessage_rect = warningMessage.get_rect()
+        warningMessage_rect.center = (
+            (self.popupsurfaceX//2, self.popupsurfaceY//2+10))
+        self.popupsurface.blit(warningMessage, warningMessage_rect)
+
+        warningImage = pygame.image.load(
+            "assets\images\warning.webp").convert_alpha()
+        warningImage = pygame.transform.scale(
+            warningImage, (25, 25))
+        warningImage_rect = warningImage.get_rect()
+        warningImage_rect.center = (self.popupsurfaceX//2, 25)
+
+        self.popupsurface.blit(warningImage, warningImage_rect)
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        pygame.display.update()
 
 
 pygame.init()

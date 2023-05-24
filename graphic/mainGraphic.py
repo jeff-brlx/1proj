@@ -1,3 +1,5 @@
+import socket
+import pickle
 import pygame
 from pygame import gfxdraw
 import random
@@ -8,6 +10,7 @@ from pygamepopup.components import Button, InfoBox
 import time
 import copy
 import sys
+import threading
 
 
 class case:
@@ -49,6 +52,9 @@ class jeu:
 
     def __init__(self):
 
+        self.player_id = 0
+        self.played = True
+
         self.whiteSmoke = (247, 241, 233)
         self.whitheSmoke2 = (214, 214, 214)
         self.blue = (15, 116, 167)
@@ -61,6 +67,7 @@ class jeu:
         self.darkRed = (81, 13, 15)
         self.Brown = (115, 76, 71)
         self.lightBrown = (159, 104, 75)
+        self.darkBrown = (76, 47, 44)
         self.white = (247, 241, 233)
         self.orange = (255, 33, 0)
         self.darkOrange = (165, 22, 3)
@@ -79,81 +86,37 @@ class jeu:
         self.gray3 = (188, 186, 186)
 
         self.clock = pygame.time.Clock()
-        self.nbPlayers = None
-        while self.nbPlayers not in [2, 3, 4]:
-            try:
-                self.nbPlayers = int(
-                    input("Enter the number of players ( 2 , 3 or 4): "))
-                if self.nbPlayers not in [2, 3, 4]:
-                    print("Invalid input. Please enter a number between 2 and 4.")
-            except ValueError:
-                print("Invalid input. Please enter a number between 2 and 4.")
+        self.totalHuman = 1
+        self.totalBot = 1
+        self.nbPlayers = self.totalHuman+self.totalBot  # human+bot
 
-        # Création d'un dictionnaire pour stocker les informations sur chaque joueur
         self.infosPlayers = {}
-        print(" *  only 1 bot per game is tolered  * ")
-        # Demander à l'utilisateur si chaque joueur est un bot ou un joueur réel
-        for i in range(self.nbPlayers):
-            player = "player " + str(i+1)
-            nature = input("is "+player+" a bot ? (Yes/No)").lower()
+        # Création d'un dictionnaire pour stocker les informations sur chaque joueur
+        for i in range(1, self.totalHuman + 1):
+            self.infosPlayers[f'player {i}'] = {'nature': 'human'}
 
-            # Vérifier que l'utilisateur a entré une réponse valide
-            while nature not in ["yes", "no"]:
-                print("Invalid response . Please respond by Yes or No.")
-                nature = input("is "+player+" a bot ? (Yes/No)").lower()
-
-            # Stocker les informations sur chaque joueur dans le dictionnaire
-            self.infosPlayers[player] = {
-                "nature": "bot" if nature == "yes" else "human"}
+        for i in range(self.totalHuman + 1, self.nbPlayers + 1):
+            self.infosPlayers[f'player {i}'] = {'nature': 'bot'}
 
         self.currentPlayer = random.randint(1, self.nbPlayers)
 
-        self.gridSize = None
-        while self.gridSize not in [5, 7, 9, 11]:
-            try:
-                self.gridSize = int(
-                    input("Enter a grid Size ( 5 , 7 , 9 or 11): "))
-                if self.gridSize not in [5, 7, 9, 11]:
-                    print(
-                        "Invalid input. Please enter a number equal to : 5 , 7 , 9 or 11.")
-            except ValueError:
-                print(
-                    "Invalid input. Please enter a number equal to : 5 , 7 , 9 or 11. ")
+        self.gridSize = 5
+
         self.fakeGridSize = self.gridSize
         self.gridSize = self.gridSize*2-1
 
         # choix du nombre de barrières
         if self.fakeGridSize == 11:
-            self.nbBarrierPerPlayer = int(
-                input("Enter a barrier number per player (4-40) :"))
-            while not (4 <= self.nbBarrierPerPlayer <= 40 and self.nbBarrierPerPlayer % 4 == 0):
-                print("Incorrect value . Please try again")
-                self.nbBarrierPerPlayer = int(
-                    input("Enter a barrier number per player (4-40) :"))
+            self.nbBarrierPerPlayer = 5
 
         elif self.fakeGridSize == 9:
-            self.nbBarrierPerPlayer = int(
-                input("Enter a barrier number per player (4-32) :"))
-            while not (4 <= self.nbBarrierPerPlayer <= 32 and self.nbBarrierPerPlayer % 4 == 0):
-                print("Incorrect value . Please try again")
-                self.nbBarrierPerPlayer = int(
-                    input("Enter a barrier number per player (4-32) :"))
+            self.nbBarrierPerPlayer = 6
 
         elif self.fakeGridSize == 7:
-            self.nbBarrierPerPlayer = int(
-                input("Enter a barrier number per player (4-24) :"))
-            while not (4 <= self.nbBarrierPerPlayer <= 24 and self.nbBarrierPerPlayer % 4 == 0):
-                print("Incorrect value . Please try again")
-                self.nbBarrierPerPlayer = int(
-                    input("Enter a barrier number per player (4-24) :"))
+            self.nbBarrierPerPlayer = 7
 
         elif self.fakeGridSize == 5:
-            self.nbBarrierPerPlayer = int(
-                input("Enter a barrier number per player (4-12) :"))
-            while not (4 <= self.nbBarrierPerPlayer <= 12 and self.nbBarrierPerPlayer % 4 == 0):
-                print("Incorrect value . Please try again")
-                self.nbBarrierPerPlayer = int(
-                    input("Enter a barrier number per player (4-12) :"))
+            self.nbBarrierPerPlayer = 8
 
         self.grid = [[case() for i in range(30)] for j in range(30)]
 
@@ -184,7 +147,8 @@ class jeu:
                         # initialise les barrières "|" (en non visibles)
                         self.grid[i][j].setNature(2)
                     else:
-                        self.grid[i][j].setNature(7)  # barrières "parasites"
+                        # barrières "parasites"
+                        self.grid[i][j].setNature(7)
 
                 if self.nbPlayers == 3:
                     if i == 0 and j == (self.gridSize//2):
@@ -212,7 +176,8 @@ class jeu:
                         self.grid[i][j].setNature(2)
 
                     else:
-                        self.grid[i][j].setNature(7)  # barrières "parasites"
+                        # barrières "parasites"
+                        self.grid[i][j].setNature(7)
 
                 if self.nbPlayers == 4:
                     if i == 0 and j == (self.gridSize//2):
@@ -244,11 +209,13 @@ class jeu:
                         self.grid[i][j].setNature(2)
 
                     else:
-                        self.grid[i][j].setNature(7)  # barrières "parasites
+                        self.grid[i][j].setNature(
+                            7)  # barrières "parasites
 
         self.wallSize = 10
 
         # variables qui servent à améliorer l'affichage graphique
+        self.cellSize = None
         if self.fakeGridSize == 5:
             self.cellSize = 80
             self.pawnShadow = 4
@@ -278,6 +245,7 @@ class jeu:
         self.boardSizeY = 650
         self.board = pygame.Surface((self.boardSizeX, self.boardSizeY))
         self.board.fill(self.Brown)
+
         self.cell = pygame.Surface((self.cellSize, self.cellSize))
         self.pannelSizeX = self.cellSize*self.fakeGridSize + \
             self.wallSize*(self.fakeGridSize-1)
@@ -285,15 +253,21 @@ class jeu:
             self.fakeGridSize+self.wallSize * \
             (self.fakeGridSize-1)+self.wallSize//2
 
+        self.nbBarrierPerPlayer = 4
+
         # initialisation du nombre de barrières des joueurs
+
         self.player1barriers = self.nbBarrierPerPlayer
         self.player2barriers = self.nbBarrierPerPlayer
         self.player3barriers = self.nbBarrierPerPlayer
         self.player4Barriers = self.nbBarrierPerPlayer
 
-        self.running = True
+        self.gameRunning = True
+        self.menuRunning = True
+
         self.player3 = False
         self.player4 = False
+
         if self.nbPlayers == 3:
             self.player3 = True
         if self.nbPlayers == 4:
@@ -320,6 +294,7 @@ class jeu:
             (self.wallSize, self.cellSize*2+self.wallSize))
         self.horizontalWallHover = pygame.Surface(
             (self.cellSize*2+self.wallSize, self.wallSize))
+
         # moveSong
         self.audio = True
         self.sfx = True
@@ -329,29 +304,72 @@ class jeu:
             'assets\sounds\MenuSelectionClick.wav')
         self.wallSong = pygame.mixer.Sound(
             'assets/sounds/nutfall.wav')
+        self.selectionSong = pygame.mixer.Sound(
+            'assets\sounds\selection_sound.mp3')
+        self.gameSong = pygame.mixer.Sound(
+            'assets\sounds\in-game_music1.mp3')
 
-    def getCurrentPlayer(self):
-        return self.currentPlayer
+        self.currentMenu = "menuPrincipal"
 
-    def getGrid(self):
-        return self.grid
+        self.playRect = None
+        self.rulesRect = None
 
-    def setGrid(self, newGrid):
-        self.grid = newGrid
+        self.backRect = None
+        self.nextRect = None
 
-    def handlingEvents(self):  # gestion des évènements
+        self.lanRect = None
+        self.hotSeatRect = None
+
+        self.hostRect = None
+        self.joinRect = None
+
+        self.addWallRect = None
+        self.deleteWallRect = None
+
+        self.fiveSizeRect = None
+        self.sevenSizeRect = None
+        self.nineSizeRect = None
+        self.elevenSizeRect = None
+
+        self.oneHumanRect = None
+        self.twoHumanRect = None
+        self.threeHumanRect = None
+        self.fourHumanRect = None
+        self.zeroBotRect = None
+        self.oneBotRect = None
+        self.twoBotRect = None
+        self.threeBotRect = None
+
+        self.launchPartyRect = None
+
+        self.lan = False
+        self.breakParty = False
+
+        self.erase = pygame.Surface(
+            (1280, 650))
+
+    def handlingGameEvents(self):  # gestion des évènements
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                self.gameRunning = False
                 self.closeWindow()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
                 if self.exitRect.collidepoint(pos):
-                    self.closeWindow()
+                    self.playSelectionSong()
+                    self.board.fill(self.Brown)
+                    self.player3 = False
+                    self.player4 = False
+                    self.gameRunning = False
+                    self.menuRunning = True
+                    self.currentMenu = "menuPrincipal"
+                    self.runMenu()
+
                 if self.settingsRect.collidepoint(pos):
+                    self.playSelectionSong()
                     if self.ShowSettingsMenu == False:
                         self.ShowSettingsMenu = True
                     else:
@@ -363,6 +381,7 @@ class jeu:
                 if self.ShowSettingsMenu == True:
                     if self.audioRect:
                         if self.audioRect.collidepoint(pos):
+                            self.playSelectionSong()
                             if self.audio == True:
                                 self.audio = False
                             else:
@@ -376,6 +395,7 @@ class jeu:
 
                     if self.sfxRect:
                         if self.sfxRect.collidepoint(pos):
+                            self.playSelectionSong()
                             if self.sfx == True:
                                 self.sfx = False
                             else:
@@ -389,7 +409,14 @@ class jeu:
 
                 if self.winExitRect:
                     if self.winExitRect.collidepoint(pos):
-                        self.closeWindow()
+                        self.playSelectionSong()
+                        self.board.fill(self.Brown)
+                        self.player3 = False
+                        self.player4 = False
+                        self.gameRunning = False
+                        self.menuRunning = True
+                        self.currentMenu = "menuPrincipal"
+                        self.runMenu()
 
                 # après un click de souris sur le plateau les coordonnées de grille correspondantes moveSongt générées
                 x, y = pos
@@ -411,7 +438,7 @@ class jeu:
 
                 # clique en dehors du tableau
                 while (x < 0 or y < 0 or y == self.fakeGridSize-1):
-                    return self.handlingEvents()
+                    return self.handlingGameEvents()
 
                 x = self.convertValue(x, self.cellSize)
                 y = self.convertValue(y, self.cellSize)
@@ -1106,7 +1133,7 @@ class jeu:
         if self.ShowSettingsMenu == False:
             # clique à la limite droite du tableau
             while (x == self.gridSize-1):
-                return self.handlingEvents()
+                return self.handlingGameEvents()
 
             gridCopy = copy.deepcopy(self.grid)
             # fonction placement de murs
@@ -1132,6 +1159,7 @@ class jeu:
                                     elif self.currentPlayer == 4:
                                         self.player4Barriers -= 1
                                     self.playWallSong()
+                                    self.played = True
                                     self.nextPlayer()
                                     return
 
@@ -1150,6 +1178,7 @@ class jeu:
                                     elif self.currentPlayer == 4:
                                         self.player4Barriers -= 1
                                     self.playWallSong()
+                                    self.played = True
                                     self.nextPlayer()
                                     return
 
@@ -1198,6 +1227,17 @@ class jeu:
             # Attendre la fin de la lecture du son
             pygame.time.wait(int(self.wallSong.get_length() * 1000))
             self.wallSong.stop()
+
+    def playSelectionSong(self):
+        if self.sfx == True:
+            self.selectionSong.play()
+            # Attendre la fin de la lecture du son
+            pygame.time.wait(int(self.selectionSong.get_length() * 1000))
+            self.selectionSong.stop()
+
+    def playGameSong(self):
+        if self.audio == True:
+            self.gameSong.play()
 
     def displayHover(self):
         if self.ShowSettingsMenu == False:
@@ -1280,7 +1320,6 @@ class jeu:
 
                     x = self.indexToPixels(line // 2)
                     y = self.indexToPixels(col // 2)
-                    self.vari = (x, y)
                     cell1 = pygame.Surface((self.cellSize, self.cellSize))
                     cell1.fill(self.beige)
 
@@ -1571,7 +1610,7 @@ class jeu:
                 return i
             if i == 22:
                 break
-        return self.handlingEvents()
+        return self.handlingGameEvents()
 
     def nextPlayer(self):
         if self.nbPlayers > self.currentPlayer:
@@ -1588,21 +1627,6 @@ class jeu:
                     break
         return win
         # après un mouvement current_player = current_player + 1 , donc le gagant est currentPlayer- 1
-
-    def displayWinner(self):
-        if self.currentPlayer-1 == 0 and self.nbPlayers == 2:
-            print(colored("Player " + str(self.nbPlayers) + " wins!", "green"))
-        elif self.currentPlayer-1 == 0 and self.nbPlayers == 3:
-            print(colored("Player " + str(self.nbPlayers) + " wins!", "yellow"))
-        elif self.currentPlayer-1 == 0 and self.nbPlayers == 4:
-            print(colored("Player " + str(self.nbPlayers) + " wins!", "magenta"))
-
-        elif self.currentPlayer-1 == 1:
-            print(colored("Player 1 wins !", "blue"))
-        elif self.currentPlayer-1 == 2:
-            print(colored("Player 2 wins !", "green"))
-        elif self.currentPlayer-1 == 3:
-            print(colored("Player 3 wins !", "yellow"))
 
     def displayGrid(self):  # affiche un tableau d'objet case
         for i in range(self.gridSize):
@@ -2514,17 +2538,237 @@ class jeu:
         pygame.quit()
         sys.exit()
 
+    def handlingMenuEvent(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.gameRunning = False
+                self.closeWindow()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
+
+                if self.addWallRect:
+                    if self.addWallRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if self.gridSize == 5*2-1:
+                            if 4 <= self.nbBarrierPerPlayer+4 <= 16:
+                                self.nbBarrierPerPlayer += 4
+                        if self.gridSize == 7*2-1:
+                            if 4 <= self.nbBarrierPerPlayer+4 <= 24:
+                                self.nbBarrierPerPlayer += 4
+                        if self.gridSize == 9*2-1:
+                            if 4 <= self.nbBarrierPerPlayer+4 <= 32:
+                                self.nbBarrierPerPlayer += 4
+                        if self.gridSize == 11*2-1:
+                            if 4 <= self.nbBarrierPerPlayer+4 <= 40:
+                                self.nbBarrierPerPlayer += 4
+                        self.menu4()
+
+                if self.deleteWallRect:
+                    if self.deleteWallRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if self.gridSize == 5*2-1:
+                            if 4 <= self.nbBarrierPerPlayer-4 <= 16:
+                                self.nbBarrierPerPlayer -= 4
+                        if self.gridSize == 7*2-1:
+                            if 4 <= self.nbBarrierPerPlayer-4 <= 24:
+                                self.nbBarrierPerPlayer -= 4
+                        if self.gridSize == 9*2-1:
+                            if 4 <= self.nbBarrierPerPlayer-4 <= 32:
+                                self.nbBarrierPerPlayer -= 4
+                        if self.gridSize == 11*2-1:
+                            if 4 <= self.nbBarrierPerPlayer-4 <= 40:
+                                self.nbBarrierPerPlayer -= 4
+                        self.menu4()
+
+                if self.playRect:
+                    if self.playRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.currentMenu = "hotseatOrLan"
+
+                if self.lanRect:
+                    if self.lanRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.lan = True
+
+                        self.currentMenu = "hostOrJoin"
+
+                if self.hotSeatRect:
+                    if self.hotSeatRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.currentMenu = "board&barrier"
+
+                if self.hostRect:
+                    if self.hostRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.currentMenu = "board&barrier"
+
+                if self.joinRect:
+                    if self.joinRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        # self.currentMenu = "join"
+                        self.client()
+
+                if self.fiveSizeRect:
+                    if self.fiveSizeRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.gridSize = 5*2-1
+                        self.fakeGridSize = 5
+                        self.cellSize = 80
+                        self.pawnShadow = 4
+                        self.pawnRadius = self.wallSize//2
+                        self.settingX = 860
+                        if self.nbBarrierPerPlayer > 16:
+                            self.nbBarrierPerPlayer = 16
+                        self.menu4()
+
+                if self.sevenSizeRect:
+                    if self.sevenSizeRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.gridSize = 7*2-1
+                        self.fakeGridSize = 7
+                        self.cellSize = 60
+                        self.pawnShadow = 4
+                        self.pawnRadius = self.wallSize//2
+                        self.settingX = 880
+                        if self.nbBarrierPerPlayer > 24:
+                            self.nbBarrierPerPlayer = 24
+
+                        self.menu4()
+
+                if self.nineSizeRect:
+                    if self.nineSizeRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.gridSize = 9*2-1
+                        self.fakeGridSize = 9
+                        self.cellSize = 50
+                        self.pawnShadow = 3
+                        self.pawnRadius = self.wallSize//2
+                        self.settingX = 920
+                        if self.nbBarrierPerPlayer > 32:
+                            self.nbBarrierPerPlayer = 32
+                        self.menu4()
+
+                if self.elevenSizeRect:
+                    if self.elevenSizeRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        self.gridSize = 11*2-1
+                        self.fakeGridSize = 11
+                        self.cellSize = 40
+                        self.pawnShadow = 3
+                        self.pawnRadius = 4
+                        self.settingX = 920
+                        self.menu4()
+
+                if self.oneHumanRect:
+                    if self.oneHumanRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 1+self.totalBot <= 4:
+                            self.totalHuman = 1
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+                if self.twoHumanRect:
+                    if self.twoHumanRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 2+self.totalBot <= 4:
+                            self.totalHuman = 2
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+                if self.threeHumanRect:
+                    if self.threeHumanRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 3+self.totalBot <= 4:
+                            self.totalHuman = 3
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+                if self.fourHumanRect:
+                    if self.fourHumanRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 4+self.totalBot <= 4:
+                            self.totalHuman = 4
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+
+                if self.zeroBotRect:
+                    if self.zeroBotRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 0+self.totalHuman <= 4:
+                            self.totalBot = 0
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+                if self.oneBotRect:
+                    if self.oneBotRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 1+self.totalHuman <= 4:
+                            self.totalBot = 1
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+                if self.twoBotRect:
+                    if self.twoBotRect.collidepoint(pos):
+                        if 2+self.totalHuman <= 4:
+                            self.totalBot = 2
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+                if self.threeBotRect:
+                    if self.threeBotRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if 3+self.totalHuman <= 4:
+                            self.totalBot = 3
+                            self.nbPlayers = self.totalHuman+self.totalBot
+                        self.menu5()
+
+                if self.nextRect:
+
+                    if self.nextRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if self.currentMenu == "board&barrier":
+                            self.currentMenu = "humanOrBot"
+
+                if self.launchPartyRect:
+                    if self.launchPartyRect.collidepoint(pos):
+                        self.playSelectionSong()
+                        if self.lan == True:
+                            # self.currentMenu = "join"
+                            self.currentPlayer = random.randint(
+                                1, self.nbPlayers)
+                            self.startServer()
+
+                        elif self.lan == False:
+                            if self.currentMenu == "humanOrBot":
+                                self.menuRunning = False
+                                self.majVariables()
+                                self.run()
+
+                if self.backRect:
+                    if self.backRect.collidepoint(pos):
+                        self.playSelectionSong()
+
+                        if self.currentMenu == "rules":
+                            self.currentMenu = "menuPrincipal"
+                        if self.currentMenu == "hotseatOrLan":
+                            self.currentMenu = "menuPrincipal"
+                        if self.currentMenu == "hostOrJoin":
+                            self.lan = False
+                            self.currentMenu = "hotseatOrLan"
+
+                        if self.currentMenu == "board&barrier":
+                            if self.lan == False:
+                                self.currentMenu = "hotseatOrLan"
+                            if self.lan == True:
+                                self.currentMenu = "hostOrJoin"
+
+                        if self.currentMenu == "humanOrBot":
+                            self.currentMenu = "board&barrier"
+
     def run(self):
         # sylvie_248
-        pygame.init()
-        pygamepopup.init()
         self.drawCellHeight()
         self.displayScreen()
-        while self.running:
+        while self.gameRunning:
             while not self.checkWin():
                 player = "player " + str(self.currentPlayer)
                 if self.infosPlayers[player]["nature"] == "human":
-                    self.handlingEvents()
+                    self.handlingGameEvents()
                     self.displayScreen()
                     self.drawPlayerDirection()
                     self.displayHover()
@@ -2557,9 +2801,11 @@ class jeu:
                     self.displayScreen()
                     pygame.display.flip()
                     self.clock.tick(30)
+
             self.displayWinnerPopup()
-            self.handlingEvents()
-        self.displayWinner()
+            self.handlingGameEvents()
+            self.screen.fill(0, 0, 0)
+            pygame.display.flip()
 
     def warning(self):
 
@@ -2608,7 +2854,1527 @@ class jeu:
 
         pygame.display.update()
 
+    def displayMenus(self):
 
-pygame.init()
-game = jeu()
-game.run()
+        if self.currentMenu == "menuPrincipal":
+
+            self.backRect = None
+            self.nextRect = None
+            self.lanRect = None
+            self.hotSeatRect = None
+            self.hostRect = None
+            self.joinRect = None
+            self.addWallRect = None
+            self.deleteWallRect = None
+            self.fiveSizeRect = None
+            self.sevenSizeRect = None
+            self.nineSizeRect = None
+            self.elevenSizeRect = None
+            self.launchPartyRect = None
+            self.oneHumanRect = None
+            self.twoHumanRect = None
+            self.threeHumanRect = None
+            self.fourHumanRect = None
+            self.zeroBotRect = None
+            self.oneBotRect = None
+            self.twoBotRect = None
+            self.threeBotRect = None
+            self.menu1()
+
+        if self.currentMenu == "hotseatOrLan":
+
+            self.playRect = None
+            self.rulesRect = None
+            self.backRect = None
+            self.nextRect = None
+            self.hostRect = None
+            self.joinRect = None
+            self.addWallRect = None
+            self.deleteWallRect = None
+            self.fiveSizeRect = None
+            self.sevenSizeRect = None
+            self.nineSizeRect = None
+            self.elevenSizeRect = None
+            self.launchPartyRect = None
+            self.oneHumanRect = None
+            self.twoHumanRect = None
+            self.threeHumanRect = None
+            self.fourHumanRect = None
+            self.zeroBotRect = None
+            self.oneBotRect = None
+            self.twoBotRect = None
+            self.threeBotRect = None
+            self.menu2()
+
+        if self.currentMenu == "hostOrJoin":
+
+            self.playRect = None
+            self.rulesRect = None
+            self.backRect = None
+            self.nextRect = None
+            self.lanRect = None
+            self.hotSeatRect = None
+            self.addWallRect = None
+            self.deleteWallRect = None
+            self.fiveSizeRect = None
+            self.sevenSizeRect = None
+            self.nineSizeRect = None
+            self.elevenSizeRect = None
+            self.launchPartyRect = None
+            self.oneHumanRect = None
+            self.twoHumanRect = None
+            self.threeHumanRect = None
+            self.fourHumanRect = None
+            self.zeroBotRect = None
+            self.oneBotRect = None
+            self.twoBotRect = None
+            self.threeBotRect = None
+            self.menu3()
+
+        if self.currentMenu == "board&barrier":
+
+            self.playRect = None
+            self.rulesRect = None
+            self.backRect = None
+            self.nextRect = None
+            self.lanRect = None
+            self.hotSeatRect = None
+            self.hostRect = None
+            self.joinRect = None
+            self.launchPartyRect = None
+            self.oneHumanRect = None
+            self.twoHumanRect = None
+            self.threeHumanRect = None
+            self.fourHumanRect = None
+            self.zeroBotRect = None
+            self.oneBotRect = None
+            self.twoBotRect = None
+            self.threeBotRect = None
+            self.menu4()
+
+        if self.currentMenu == "humanOrBot":
+
+            self.playRect = None
+            self.rulesRect = None
+            self.backRect = None
+            self.nextRect = None
+            self.lanRect = None
+            self.hotSeatRect = None
+            self.hostRect = None
+            self.joinRect = None
+            self.addWallRect = None
+            self.deleteWallRect = None
+            self.fiveSizeRect = None
+            self.sevenSizeRect = None
+            self.nineSizeRect = None
+            self.elevenSizeRect = None
+            self.oneHumanRect = None
+            self.twoHumanRect = None
+            self.threeHumanRect = None
+            self.fourHumanRect = None
+            self.zeroBotRect = None
+            self.oneBotRect = None
+            self.twoBotRect = None
+            self.threeBotRect = None
+            self.menu5()
+
+    def menu1(self):
+
+        self.screen.fill(self.beige6)
+        self.popupsurfaceX = 500
+        self.popupsurfaceY = 400
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.Brown)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+
+        border_radius = 10
+        popup_color2 = (self.darkBrown
+                        )
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5+6)
+
+        # PLAY SURFACE
+        self.playButtonX = 200
+        self.playButtonY = 75
+
+        self.playRect = pygame.Rect(
+            540, 202, self.playButtonX, self.playButtonY)
+
+        self.playSurface = pygame.Surface((self.playButtonX, self.playButtonY))
+        borderplay = pygame.Surface((self.playButtonX, 5+self.playButtonY))
+
+        self.playSurface.fill(self.black)
+        borderplay.fill(self.black2)
+
+        self.playSurfaceRect = self.playSurface.get_rect()
+        self.playSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playMessage = fontOk.render('play', True, self.whiteSmoke)
+        playMessage_rect = playMessage.get_rect()
+        playMessage_rect.center = (
+            (self.playButtonX//2, (self.playButtonY)//2))
+        self.playSurface.blit(playMessage, playMessage_rect)
+        self.popupsurface.blit(
+            borderplay, self.playSurfaceRect)
+        self.popupsurface.blit(self.playSurface,  self.playSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # RULES SURFACE
+        self.rulesButtonX = 200
+        self.rulesButtonY = 75
+
+        self.rulesRect = pygame.Rect(
+            540, 334, self.rulesButtonX, self.rulesButtonY)
+
+        self.rulesSurface = pygame.Surface(
+            (self.rulesButtonX, self.rulesButtonY))
+        borderrules = pygame.Surface((self.rulesButtonX, 5+self.rulesButtonY))
+
+        self.rulesSurface.fill(self.black)
+        borderrules.fill(self.black2)
+
+        self.rulesSurfaceRect = self.rulesSurface.get_rect()
+        self.rulesSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//3)*2-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        rulesMessage = fontOk.render('Rules', True, self.whiteSmoke)
+        rulesMessage_rect = rulesMessage.get_rect()
+        rulesMessage_rect.center = (
+            (self.rulesButtonX//2, (self.rulesButtonY)//2))
+        self.rulesSurface.blit(rulesMessage, rulesMessage_rect)
+        self.popupsurface.blit(
+            borderrules, self.rulesSurfaceRect)
+        self.popupsurface.blit(self.rulesSurface,  self.rulesSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        pygame.display.update()
+
+    def menu2(self):
+        # MENU SURFACE
+        self.screen.fill(self.beige6)
+        self.popupsurfaceX = 500
+        self.popupsurfaceY = 400
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.Brown)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+
+        border_radius = 10
+        popup_color2 = (self.darkBrown
+                        )
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5+6)
+
+        # BACK SURFACE
+        self.backRect = pygame.Rect(
+            600, 468, 80, 80/2)
+        self.backSurface = pygame.Surface((80, 80/2))
+        bordernext = pygame.Surface((80, 5+80/2))
+
+        self.backSurface.fill(self.Red)
+        bordernext.fill(self.darkRed)
+
+        self.backSurfaceRect = self.backSurface.get_rect()
+        self.backSurfaceRect.center = (
+            self.popupsurfaceX//2, (self.popupsurfaceY//12)*11)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 16)
+        backMessage = fontOk.render('Back', True, self.whiteSmoke)
+        backMessage_rect = backMessage.get_rect()
+        backMessage_rect.center = ((80//2, (80/2)//2))
+        self.backSurface.blit(backMessage, backMessage_rect)
+        self.popupsurface.blit(
+            bordernext,
+            self.backSurfaceRect)
+        self.popupsurface.blit(self.backSurface,  self.backSurfaceRect)
+
+        # hotSeat SURFACE
+        self.hotSeatButtonX = 200
+        self.hotSeatButtonY = 75
+
+        self.hotSeatRect = pygame.Rect(
+            540, 202, self.hotSeatButtonX, self.hotSeatButtonY)
+
+        self.hotSeatSurface = pygame.Surface(
+            (self.hotSeatButtonX, self.hotSeatButtonY))
+        borderhotSeat = pygame.Surface(
+            (self.hotSeatButtonX, 5+self.hotSeatButtonY))
+
+        self.hotSeatSurface.fill(self.black)
+        borderhotSeat.fill(self.black2)
+
+        self.hotSeatSurfaceRect = self.hotSeatSurface.get_rect()
+        self.hotSeatSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        hotSeatMessage = fontOk.render('Hotseat Party', True, self.whiteSmoke)
+        hotSeatMessage_rect = hotSeatMessage.get_rect()
+        hotSeatMessage_rect.center = (
+            (self.hotSeatButtonX//2, (self.hotSeatButtonY)//2))
+        self.hotSeatSurface.blit(hotSeatMessage, hotSeatMessage_rect)
+        self.popupsurface.blit(
+            borderhotSeat, self.hotSeatSurfaceRect)
+        self.popupsurface.blit(self.hotSeatSurface,  self.hotSeatSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # lan SURFACE
+        self.lanButtonX = 200
+        self.lanButtonY = 75
+
+        self.lanRect = pygame.Rect(
+            540, 334, self.lanButtonX, self.lanButtonY)
+
+        self.lanSurface = pygame.Surface(
+            (self.lanButtonX, self.lanButtonY))
+        borderlan = pygame.Surface((self.lanButtonX, 5+self.lanButtonY))
+
+        self.lanSurface.fill(self.black)
+        borderlan.fill(self.black2)
+
+        self.lanSurfaceRect = self.lanSurface.get_rect()
+        self.lanSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//3)*2-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        lanMessage = fontOk.render('Lan Party', True, self.whiteSmoke)
+        lanMessage_rect = lanMessage.get_rect()
+        lanMessage_rect.center = (
+            (self.lanButtonX//2, (self.lanButtonY)//2))
+        self.lanSurface.blit(lanMessage, lanMessage_rect)
+        self.popupsurface.blit(
+            borderlan, self.lanSurfaceRect)
+        self.popupsurface.blit(self.lanSurface,  self.lanSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        pygame.display.update()
+
+    def menu3(self):
+        # MENU SURFACE
+        self.screen.fill(self.beige6)
+        self.popupsurfaceX = 500
+        self.popupsurfaceY = 400
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.Brown)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+
+        border_radius = 10
+        popup_color2 = (self.darkBrown
+                        )
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5+6)
+
+        # BACK SURFACE
+        self.backRect = pygame.Rect(
+            600, 468, 80, 80/2)
+        self.backSurface = pygame.Surface((80, 80/2))
+        bordernext = pygame.Surface((80, 5+80/2))
+
+        self.backSurface.fill(self.Red)
+        bordernext.fill(self.darkRed)
+
+        self.backSurfaceRect = self.backSurface.get_rect()
+        self.backSurfaceRect.center = (
+            self.popupsurfaceX//2, (self.popupsurfaceY//12)*11)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 16)
+        backMessage = fontOk.render('Back', True, self.whiteSmoke)
+        backMessage_rect = backMessage.get_rect()
+        backMessage_rect.center = ((80//2, (80/2)//2))
+        self.backSurface.blit(backMessage, backMessage_rect)
+        self.popupsurface.blit(
+            bordernext,
+            self.backSurfaceRect)
+        self.popupsurface.blit(self.backSurface,  self.backSurfaceRect)
+
+        # host SURFACE
+        self.hostButtonX = 200
+        self.hostButtonY = 75
+
+        self.hostRect = pygame.Rect(
+            540, 202, self.hostButtonX, self.hostButtonY)
+
+        self.hostSurface = pygame.Surface((self.hostButtonX, self.hostButtonY))
+        borderhost = pygame.Surface((self.hostButtonX, 5+self.hostButtonY))
+
+        self.hostSurface.fill(self.black)
+        borderhost.fill(self.black2)
+
+        self.hostSurfaceRect = self.hostSurface.get_rect()
+        self.hostSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        hostMessage = fontOk.render('Host', True, self.whiteSmoke)
+        hostMessage_rect = hostMessage.get_rect()
+        hostMessage_rect.center = (
+            (self.hostButtonX//2, (self.hostButtonY)//2))
+        self.hostSurface.blit(hostMessage, hostMessage_rect)
+        self.popupsurface.blit(
+            borderhost, self.hostSurfaceRect)
+        self.popupsurface.blit(self.hostSurface,  self.hostSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # join SURFACE
+        self.joinButtonX = 200
+        self.joinButtonY = 75
+
+        self.joinRect = pygame.Rect(
+            540, 334, self.joinButtonX, self.joinButtonY)
+
+        self.joinSurface = pygame.Surface(
+            (self.joinButtonX, self.joinButtonY))
+        borderjoin = pygame.Surface((self.joinButtonX, 5+self.joinButtonY))
+
+        self.joinSurface.fill(self.black)
+        borderjoin.fill(self.black2)
+
+        self.joinSurfaceRect = self.joinSurface.get_rect()
+        self.joinSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//3)*2-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        joinMessage = fontOk.render('Join', True, self.whiteSmoke)
+        joinMessage_rect = joinMessage.get_rect()
+        joinMessage_rect.center = (
+            (self.joinButtonX//2, (self.joinButtonY)//2))
+        self.joinSurface.blit(joinMessage, joinMessage_rect)
+        self.popupsurface.blit(
+            borderjoin, self.joinSurfaceRect)
+        self.popupsurface.blit(self.joinSurface,  self.joinSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        pygame.display.update()
+
+    def menu4(self):
+        # MENU SURFACE
+        self.screen.fill(self.beige6)
+        self.popupsurfaceX = 500
+        self.popupsurfaceY = 470
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.Brown)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+
+        border_radius = 10
+        popup_color2 = (self.darkBrown
+                        )
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5+6)
+
+        # BACK SURFACE
+        self.backRect = pygame.Rect(
+            517, 500, 80, 80/2)
+        self.backSurface = pygame.Surface((80, 80/2))
+        bordernext = pygame.Surface((80, 5+80/2))
+
+        self.backSurface.fill(self.Red)
+        bordernext.fill(self.darkRed)
+
+        self.backSurfaceRect = self.backSurface.get_rect()
+        self.backSurfaceRect.center = (
+            self.popupsurfaceX//3, (self.popupsurfaceY//12)*11)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        backMessage = fontOk.render('Back', True, self.whiteSmoke)
+        backMessage_rect = backMessage.get_rect()
+        backMessage_rect.center = ((80//2, (80/2)//2))
+        self.backSurface.blit(backMessage, backMessage_rect)
+        self.popupsurface.blit(
+            bordernext,
+            self.backSurfaceRect)
+        self.popupsurface.blit(self.backSurface,  self.backSurfaceRect)
+
+        # NEXT SURFACE
+        self.nextRect = pygame.Rect(
+            680, 500, 80, 80/2)
+        self.nextSurface = pygame.Surface((80, 80/2))
+        bordernext = pygame.Surface((80, 5+80/2))
+
+        self.nextSurface.fill(self.green)
+        bordernext.fill(self.darkGreen)
+
+        self.nextSurfaceRect = self.nextSurface.get_rect()
+        self.nextSurfaceRect.center = (
+            (self.popupsurfaceX//3)*2, (self.popupsurfaceY//12)*11)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        nextMessage = fontOk.render('Next', True, self.whiteSmoke)
+        nextMessage_rect = nextMessage.get_rect()
+        nextMessage_rect.center = ((80//2, (80/2)//2))
+        self.nextSurface.blit(nextMessage, nextMessage_rect)
+        self.popupsurface.blit(
+            bordernext, self.nextSurfaceRect)
+        self.popupsurface.blit(self.nextSurface,  self.nextSurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # RULES SURFACE
+        self.rulesButtonX = 350
+        self.rulesButtonY = 50
+
+        self.rulesSurface = pygame.Surface(
+            (self.rulesButtonX, self.rulesButtonY))
+        borderrules = pygame.Surface((self.rulesButtonX, 5+self.rulesButtonY))
+
+        self.rulesSurface.fill(self.black)
+        borderrules.fill(self.black2)
+
+        self.rulesSurfaceRect = self.rulesSurface.get_rect()
+        self.rulesSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//8))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        rulesMessage = fontOk.render('Board size', True, self.whiteSmoke)
+        rulesMessage_rect = rulesMessage.get_rect()
+        rulesMessage_rect.center = (
+            (self.rulesButtonX//2, (self.rulesButtonY)//2))
+        self.rulesSurface.blit(rulesMessage, rulesMessage_rect)
+        self.popupsurface.blit(
+            borderrules, self.rulesSurfaceRect)
+        self.popupsurface.blit(self.rulesSurface,  self.rulesSurfaceRect)
+
+        # Player number5 SURFACE
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+
+        self.fiveSizeRect = pygame.Rect(
+            417, 211, self.playerNbButtonX, self.playerNbButtonY)
+
+        self.playerNbSurface5 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer5Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.gridSize == 5*2-1:
+            self.playerNbSurface5.fill(self.blue)
+            borderplayer5Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface5.fill(self.beige3)
+            borderplayer5Nb.fill(self.gray3)
+
+        self.playerNbSurface5Rect = self.playerNbSurface5.get_rect()
+        self.playerNbSurface5Rect.center = (
+            (self.popupsurfaceX//8), (self.popupsurfaceY//8)*3-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('5 x 5', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface5.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer5Nb, self.playerNbSurface5Rect)
+        self.popupsurface.blit(self.playerNbSurface5,
+                               self.playerNbSurface5Rect)
+
+        # Player number 7 Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+
+        self.sevenSizeRect = pygame.Rect(
+            540, 211, self.playerNbButtonX, self.playerNbButtonY)
+
+        self.playerNbSurface9 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer7Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.gridSize == 7*2-1:
+            self.playerNbSurface9.fill(self.blue)
+            borderplayer7Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface9.fill(self.beige3)
+            borderplayer7Nb.fill(self.gray3)
+
+        self.playerNbSurface9Rect = self.playerNbSurface9.get_rect()
+        self.playerNbSurface9Rect.center = (
+            (self.popupsurfaceX//8)*3, ((self.popupsurfaceY//8)*3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('7 x 7', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface9.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer7Nb, self.playerNbSurface9Rect)
+        self.popupsurface.blit(self.playerNbSurface9,
+                               self.playerNbSurface9Rect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # Player number9 SURFACE
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+
+        self.nineSizeRect = pygame.Rect(
+            664, 211, self.playerNbButtonX, self.playerNbButtonY)
+
+        self.playerNbSurface9 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer9Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.gridSize == 9*2-1:
+            self.playerNbSurface9.fill(self.blue)
+            borderplayer9Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface9.fill(self.beige3)
+            borderplayer9Nb.fill(self.gray3)
+
+        self.playerNbSurface9Rect = self.playerNbSurface9.get_rect()
+        self.playerNbSurface9Rect.center = (
+            (self.popupsurfaceX//8)*5, ((self.popupsurfaceY//8)*3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('9 x 9', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface9.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer9Nb, self.playerNbSurface9Rect)
+        self.popupsurface.blit(self.playerNbSurface9,
+                               self.playerNbSurface9Rect)
+
+        # Player number 11 Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+
+        self.elevenSizeRect = pygame.Rect(
+            789, 211, self.playerNbButtonX, self.playerNbButtonY)
+
+        self.playerNbSurface11 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer11Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.gridSize == 11*2-1:
+            self.playerNbSurface11.fill(self.blue)
+            borderplayer11Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface11.fill(self.beige3)
+            borderplayer11Nb.fill(self.gray3)
+
+        self.playerNbSurface11Rect = self.playerNbSurface11.get_rect()
+        self.playerNbSurface11Rect.center = (
+            (self.popupsurfaceX//8)*7, ((self.popupsurfaceY//8)*3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('11 x 11', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface11.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer11Nb, self.playerNbSurface11Rect)
+        self.popupsurface.blit(self.playerNbSurface11,
+                               self.playerNbSurface11Rect)
+
+        # Wall number SURFACE
+        self.rulesButtonX = 350
+        self.rulesButtonY = 50
+
+        self.rulesSurface = pygame.Surface(
+            (self.rulesButtonX, self.rulesButtonY))
+        borderrules = pygame.Surface((self.rulesButtonX, 5+self.rulesButtonY))
+
+        self.rulesSurface.fill(self.black)
+        borderrules.fill(self.black2)
+
+        self.rulesSurfaceRect = self.rulesSurface.get_rect()
+        self.rulesSurfaceRect.center = (
+            (self.popupsurfaceX//2), ((self.popupsurfaceY//8)*4)+12)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        rulesMessage = fontOk.render('Walls per player', True, self.whiteSmoke)
+        rulesMessage_rect = rulesMessage.get_rect()
+        rulesMessage_rect.center = (
+            (self.rulesButtonX//2, (self.rulesButtonY)//2))
+        self.rulesSurface.blit(rulesMessage, rulesMessage_rect)
+        self.popupsurface.blit(
+            borderrules, self.rulesSurfaceRect)
+        self.popupsurface.blit(self.rulesSurface,  self.rulesSurfaceRect)
+
+        # show wall Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+
+        self.playerNbSurface11 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer7Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        self.playerNbSurface11.fill(self.beige3)
+        borderplayer7Nb.fill(self.gray3)
+
+        self.playerNbSurface11Rect = self.playerNbSurface11.get_rect()
+        self.playerNbSurface11Rect.center = (
+            (self.popupsurfaceX//6)*3, ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render(
+            str(self.nbBarrierPerPlayer), True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface11.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer7Nb, self.playerNbSurface11Rect)
+        self.popupsurface.blit(self.playerNbSurface11,
+                               self.playerNbSurface11Rect)
+
+        # delete wall Surface
+        self.playerNbButtonX = 70//3
+        self.playerNbButtonY = 65//3
+
+        self.deleteWallRect = pygame.Rect(
+            545, 416, 70//3, 65//3)
+
+        self.playerNbSurface11 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer7Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        self.playerNbSurface11.fill(self.blue)
+        borderplayer7Nb.fill(self.darkBlue)
+
+        self.playerNbSurface11Rect = self.playerNbSurface11.get_rect()
+        self.playerNbSurface11Rect.center = (
+            (self.popupsurfaceX//6)*2, ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render("-", True, self.whiteSmoke)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface11.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer7Nb, self.playerNbSurface11Rect)
+        self.popupsurface.blit(self.playerNbSurface11,
+                               self.playerNbSurface11Rect)
+
+        # add wall Surface
+        self.playerNbButtonX = 70//3
+        self.playerNbButtonY = 65//3
+
+        self.addWallRect = pygame.Rect(
+            711, 416, 70//3, 65//3)
+
+        self.playerNbSurface11 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer7Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        self.playerNbSurface11.fill(self.blue)
+        borderplayer7Nb.fill(self.darkBlue)
+
+        self.playerNbSurface11Rect = self.playerNbSurface11.get_rect()
+        self.playerNbSurface11Rect.center = (
+            (self.popupsurfaceX//6)*4, ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render("+", True, self.whiteSmoke)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface11.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer7Nb, self.playerNbSurface11Rect)
+        self.popupsurface.blit(self.playerNbSurface11,
+                               self.playerNbSurface11Rect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+        pygame.display.update()
+
+    def menu5(self):
+        # MENU SURFACE
+        self.screen.fill(self.beige6)
+        self.popupsurfaceX = 500
+        self.popupsurfaceY = 470
+        self.popupsurface = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface.fill((0, 0, 0, 0))
+        border_radius = 10
+        popup_color = (self.Brown)
+        pygame.draw.rect(self.popupsurface, popup_color,
+                         self.popupsurface.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect = self.popupsurface.get_rect()
+        self.popupsurfaceRect.center = (self.boardSizeX/2+(self.screenSizeX - self.boardSizeX) //
+                                        2, self.boardSizeY/2)
+        self.popupsurface2 = pygame.Surface(
+            (self.popupsurfaceX, self.popupsurfaceY), pygame.SRCALPHA)
+        self.popupsurface2.fill((0, 0, 0, 0))
+
+        border_radius = 10
+        popup_color2 = (self.darkBrown
+                        )
+        pygame.draw.rect(self.popupsurface2, popup_color2,
+                         self.popupsurface2.get_rect(), border_radius=border_radius)
+        self.popupsurfaceRect2 = self.popupsurface2.get_rect()
+        self.popupsurfaceRect2.center = (
+            (self.boardSizeX/2)+(self.screenSizeX - self.boardSizeX) //
+            2, (self.boardSizeY/2)+self.wallSize//1.5+6)
+
+        # BACK SURFACE
+        self.backRect = pygame.Rect(
+            517, 500, 80, 80/2)
+        self.backSurface = pygame.Surface((80, 80/2))
+        bordernext = pygame.Surface((80, 5+80/2))
+
+        self.backSurface.fill(self.Red)
+        bordernext.fill(self.darkRed)
+
+        self.backSurfaceRect = self.backSurface.get_rect()
+        self.backSurfaceRect.center = (
+            self.popupsurfaceX//3, (self.popupsurfaceY//12)*11)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        backMessage = fontOk.render('Back', True, self.whiteSmoke)
+        backMessage_rect = backMessage.get_rect()
+        backMessage_rect.center = ((80//2, (80/2)//2))
+        self.backSurface.blit(backMessage, backMessage_rect)
+        self.popupsurface.blit(
+            bordernext,
+            self.backSurfaceRect)
+        self.popupsurface.blit(self.backSurface,  self.backSurfaceRect)
+
+        # launchParty SURFACE
+        self.launchPartyRect = pygame.Rect(
+            680, 500, 80, 80/2)
+        self.launchPartySurface = pygame.Surface((80, 80/2))
+        borderlaunchParty = pygame.Surface((80, 5+80/2))
+
+        self.launchPartySurface.fill(self.green)
+        borderlaunchParty.fill(self.darkGreen)
+
+        self.launchPartySurfaceRect = self.launchPartySurface.get_rect()
+        self.launchPartySurfaceRect.center = (
+            (self.popupsurfaceX//3)*2, (self.popupsurfaceY//12)*11)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 20)
+        launchPartyMessage = fontOk.render(
+            'Start', True, self.whiteSmoke)
+        launchPartyMessage_rect = launchPartyMessage.get_rect()
+        launchPartyMessage_rect.center = ((80//2, (80/2)//2))
+        self.launchPartySurface.blit(
+            launchPartyMessage, launchPartyMessage_rect)
+        self.popupsurface.blit(
+            borderlaunchParty, self.launchPartySurfaceRect)
+        self.popupsurface.blit(self.launchPartySurface,
+                               self.launchPartySurfaceRect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # RULES SURFACE
+        self.rulesButtonX = 350
+        self.rulesButtonY = 50
+
+        self.rulesSurface = pygame.Surface(
+            (self.rulesButtonX, self.rulesButtonY))
+        borderrules = pygame.Surface((self.rulesButtonX, 5+self.rulesButtonY))
+
+        self.rulesSurface.fill(self.black)
+        borderrules.fill(self.black2)
+
+        self.rulesSurfaceRect = self.rulesSurface.get_rect()
+        self.rulesSurfaceRect.center = (
+            (self.popupsurfaceX//2), (self.popupsurfaceY//8))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        rulesMessage = fontOk.render('Human Players', True, self.whiteSmoke)
+        rulesMessage_rect = rulesMessage.get_rect()
+        rulesMessage_rect.center = (
+            (self.rulesButtonX//2, (self.rulesButtonY)//2))
+        self.rulesSurface.blit(rulesMessage, rulesMessage_rect)
+        self.popupsurface.blit(
+            borderrules, self.rulesSurfaceRect)
+        self.popupsurface.blit(self.rulesSurface,  self.rulesSurfaceRect)
+
+        # Player number5 SURFACE
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.oneHumanRect = pygame.Rect(
+            417, 211, self.playerNbButtonX, self.playerNbButtonY)
+        self.playerNbSurface5 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer5Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalHuman == 1:
+            self.playerNbSurface5.fill(self.blue)
+            borderplayer5Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface5.fill(self.beige3)
+            borderplayer5Nb.fill(self.gray3)
+
+        self.playerNbSurface5Rect = self.playerNbSurface5.get_rect()
+        self.playerNbSurface5Rect.center = (
+            (self.popupsurfaceX//8), (self.popupsurfaceY//8)*3-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('1', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface5.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer5Nb, self.playerNbSurface5Rect)
+        self.popupsurface.blit(self.playerNbSurface5,
+                               self.playerNbSurface5Rect)
+
+        # Player number 7 Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.twoHumanRect = pygame.Rect(
+            540, 211, self.playerNbButtonX, self.playerNbButtonY)
+        self.playerNbSurface7 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer7Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalHuman == 2:
+            self.playerNbSurface7.fill(self.blue)
+            borderplayer7Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface7.fill(self.beige3)
+            borderplayer7Nb.fill(self.gray3)
+
+        self.playerNbSurface7Rect = self.playerNbSurface7.get_rect()
+        self.playerNbSurface7Rect.center = (
+            (self.popupsurfaceX//8)*3, ((self.popupsurfaceY//8)*3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('2', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface7.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer7Nb, self.playerNbSurface7Rect)
+        self.popupsurface.blit(self.playerNbSurface7,
+                               self.playerNbSurface7Rect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+
+        # Player number9 SURFACE
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.threeHumanRect = pygame.Rect(
+            664, 211, self.playerNbButtonX, self.playerNbButtonY)
+        self.threeHuman = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer9Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalHuman == 3:
+            self.playerNbSurface9.fill(self.blue)
+            borderplayer9Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface9.fill(self.beige3)
+            borderplayer9Nb.fill(self.gray3)
+
+        self.playerNbSurface9Rect = self.playerNbSurface9.get_rect()
+        self.playerNbSurface9Rect.center = (
+            (self.popupsurfaceX//8)*5, ((self.popupsurfaceY//8)*3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('3', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface9.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer9Nb, self.playerNbSurface9Rect)
+        self.popupsurface.blit(self.playerNbSurface9,
+                               self.playerNbSurface9Rect)
+
+        # Player number 11 Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.fourHumanRect = pygame.Rect(
+            789, 211, self.playerNbButtonX, self.playerNbButtonY)
+        self.playerNbSurface11 = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer11Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalHuman == 4:
+            self.playerNbSurface11.fill(self.blue)
+            borderplayer11Nb.fill(self.darkBlue)
+        else:
+            self.playerNbSurface11.fill(self.beige3)
+            borderplayer11Nb.fill(self.gray3)
+
+        self.playerNbSurface11Rect = self.playerNbSurface11.get_rect()
+        self.playerNbSurface11Rect.center = (
+            (self.popupsurfaceX//8)*7, ((self.popupsurfaceY//8)*3)-20)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('4', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.playerNbSurface11.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer11Nb, self.playerNbSurface11Rect)
+        self.popupsurface.blit(self.playerNbSurface11,
+                               self.playerNbSurface11Rect)
+
+        # Wall number SURFACE
+        self.rulesButtonX = 350
+        self.rulesButtonY = 50
+
+        self.rulesSurface = pygame.Surface(
+            (self.rulesButtonX, self.rulesButtonY))
+        borderrules = pygame.Surface((self.rulesButtonX, 5+self.rulesButtonY))
+
+        self.rulesSurface.fill(self.black)
+        borderrules.fill(self.black2)
+
+        self.rulesSurfaceRect = self.rulesSurface.get_rect()
+        self.rulesSurfaceRect.center = (
+            (self.popupsurfaceX//2), ((self.popupsurfaceY//8)*4)+12)
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        rulesMessage = fontOk.render('Bot Players', True, self.whiteSmoke)
+        rulesMessage_rect = rulesMessage.get_rect()
+        rulesMessage_rect.center = (
+            (self.rulesButtonX//2, (self.rulesButtonY)//2))
+        self.rulesSurface.blit(rulesMessage, rulesMessage_rect)
+        self.popupsurface.blit(
+            borderrules, self.rulesSurfaceRect)
+        self.popupsurface.blit(self.rulesSurface,  self.rulesSurfaceRect)
+
+        # Player number5 SURFACE
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.zeroBotRect = pygame.Rect(
+            417, 394, self.playerNbButtonX, self.playerNbButtonY)
+        self.zeroBot = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer5Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalBot == 0:
+            self.zeroBot.fill(self.blue)
+            borderplayer5Nb.fill(self.darkBlue)
+        else:
+            self.zeroBot.fill(self.beige3)
+            borderplayer5Nb.fill(self.gray3)
+
+        self.playerNbSurface5Rect = self.zeroBot.get_rect()
+        self.playerNbSurface5Rect.center = (
+            (self.popupsurfaceX//8), ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('0', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.zeroBot.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer5Nb, self.playerNbSurface5Rect)
+        self.popupsurface.blit(self.zeroBot,
+                               self.playerNbSurface5Rect)
+
+        # Player number 7 Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.oneBotRect = pygame.Rect(
+            541, 394, self.playerNbButtonX, self.playerNbButtonY)
+        self.oneBot = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer9Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalBot == 1:
+            self.oneBot.fill(self.blue)
+            borderplayer9Nb.fill(self.darkBlue)
+        else:
+            self.oneBot.fill(self.beige3)
+            borderplayer9Nb.fill(self.gray3)
+
+        self.playerNbSurface9Rect = self.oneBot.get_rect()
+        self.playerNbSurface9Rect.center = (
+            (self.popupsurfaceX//8)*3, ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('1', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.oneBot.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer9Nb, self.playerNbSurface9Rect)
+        self.popupsurface.blit(self.oneBot,
+                               self.playerNbSurface9Rect)
+
+        # Player number9 SURFACE
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.twoBotRect = pygame.Rect(
+            665, 394, self.playerNbButtonX, self.playerNbButtonY)
+        self.twoBot = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer9Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalBot == 2:
+            self.twoBot.fill(self.blue)
+            borderplayer9Nb.fill(self.darkBlue)
+        else:
+            self.twoBot.fill(self.beige3)
+            borderplayer9Nb.fill(self.gray3)
+
+        self.playerNbSurface9Rect = self.twoBot.get_rect()
+        self.playerNbSurface9Rect.center = (
+            (self.popupsurfaceX//8)*5, ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('2', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.twoBot.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer9Nb, self.playerNbSurface9Rect)
+        self.popupsurface.blit(self.twoBot,
+                               self.playerNbSurface9Rect)
+
+        # Player number 11 Surface
+        self.playerNbButtonX = 70
+        self.playerNbButtonY = 65
+        self.threeBotRect = pygame.Rect(
+            789, 394, self.playerNbButtonX, self.playerNbButtonY)
+        self.threeBot = pygame.Surface(
+            (self.playerNbButtonX, self.playerNbButtonY))
+        borderplayer11Nb = pygame.Surface(
+            (self.playerNbButtonX, 5+self.playerNbButtonY))
+
+        if self.totalBot == 3:
+            self.threeBot.fill(self.blue)
+            borderplayer11Nb.fill(self.darkBlue)
+        else:
+            self.threeBot.fill(self.beige3)
+            borderplayer11Nb.fill(self.gray3)
+
+        self.playerNbSurface11Rect = self.threeBot.get_rect()
+        self.playerNbSurface11Rect.center = (
+            (self.popupsurfaceX//8)*7, ((self.popupsurfaceY//8)*6-12))
+        fontOk = pygame.font.Font("assets/font/chalk_scratch.otf", 30)
+        playerNbMessage = fontOk.render('3', True, self.black)
+        playerNbMessage_rect = playerNbMessage.get_rect()
+        playerNbMessage_rect.center = (
+            (self.playerNbButtonX//2, (self.playerNbButtonY)//2))
+
+        self.threeBot.blit(playerNbMessage, playerNbMessage_rect)
+        self.popupsurface.blit(
+            borderplayer11Nb, self.playerNbSurface11Rect)
+        self.popupsurface.blit(self.threeBot,
+                               self.playerNbSurface11Rect)
+
+        self.screen.blit(self.popupsurface2, self.popupsurfaceRect2)
+        self.screen.blit(self.popupsurface, self.popupsurfaceRect)
+        pygame.display.update()
+
+    def runMenu(self):
+        while self.menuRunning:
+            self.handlingMenuEvent()
+            self.displayMenus()
+            pygame.display.flip()
+        self.menuRunning = False
+
+    def majVariables(self):
+
+        if self.nbPlayers >= 3:
+            self.player3 = True
+        if self.nbPlayers == 4:
+            self.player4 = True
+
+        if self.fakeGridSize == 5:
+            self.cellSize = 80
+            self.pawnShadow = 4
+            self.pawnRadius = self.wallSize//2
+            self.settingX = 860
+        elif self.fakeGridSize == 7:
+            self.cellSize = 60
+            self.pawnShadow = 4
+            self.pawnRadius = self.wallSize//2
+            self.settingX = 880
+        elif self.fakeGridSize == 9:
+            self.cellSize = 50
+            self.pawnShadow = 3
+            self.pawnRadius = self.wallSize//2
+            self.settingX = 920
+        elif self.fakeGridSize == 11:
+            self.cellSize = 40
+            self.pawnShadow = 3
+            self.pawnRadius = 4
+            self.settingX = 920
+
+        self.cell = pygame.Surface(
+            (self.cellSize, self.cellSize))
+        self.pannelSizeX = self.cellSize*self.fakeGridSize + \
+            self.wallSize*(self.fakeGridSize-1)
+        self.pannelPositionY = self.cellSize+self.wallSize+self.cellSize * \
+            self.fakeGridSize+self.wallSize * \
+            (self.fakeGridSize-1)+self.wallSize//2
+
+        # définition de surafaces pour le hover des cellules et murs
+        self.cellHover = pygame.Surface(
+            (self.cellSize, self.cellSize))
+        self.cellHoverBorder = pygame.Surface(
+            (self.cellSize, self.wallSize//2))
+        self.verticalWallHover = pygame.Surface(
+            (self.wallSize, self.cellSize*2+self.wallSize))
+        self.horizontalWallHover = pygame.Surface(
+            (self.cellSize*2+self.wallSize, self.wallSize))
+
+        # définition des surfaces de clique pour les in-game menu
+        self.exitRect = pygame.Rect(
+            330, 0, self.cellSize, self.cellSize)
+        self.settingsRect = pygame.Rect(
+            self.settingX, 0, self.cellSize, self.cellSize)
+
+        # Création d'un dictionnire pour stocker les informations sur chaque joueur
+
+        self.infosPlayers = {}
+        for i in range(1, self.totalHuman + 1):
+            self.infosPlayers[f'player {i}'] = {
+                'nature': 'human'}
+        for i in range(self.totalHuman + 1, self.nbPlayers + 1):
+            self.infosPlayers[f'player {i}'] = {
+                'nature': 'bot'}
+
+        # cette boucle va attribuer une nature aux cases
+        self.grid = [[case() for i in range(30)]
+                     for j in range(30)]
+        for i in range(self.gridSize):
+            for j in range(self.gridSize):
+
+                if self.nbPlayers == 2:
+                    if i == 0 and j == (self.gridSize//2):
+                        # initialise le pion du joueur 1 (millieu 1ère ligne)
+                        self.grid[i][j].setNature(4)
+
+                    elif (i == self.gridSize-1 and j == self.gridSize//2):
+                        # initialise le pion du joueur 2 (millieu 2ème ligne)
+                        self.grid[i][j].setNature(5)
+
+                    elif (i % 2 == 0 and j % 2 == 0):
+                        # initialise les cases occupables par le pions
+                        self.grid[i][j].setNature(0)
+
+                    elif (i % 2 == 1 and j % 2 == 0):
+                        # initialise les barrières "-" (en non visisbles)
+                        self.grid[i][j].setNature(1)
+
+                    elif (i % 2 == 0 and j % 2 == 1):
+                        # initialise les barrières "|" (en non visibles)
+                        self.grid[i][j].setNature(2)
+                    else:
+                        # barrières "parasites"
+                        self.grid[i][j].setNature(7)
+
+                if self.nbPlayers == 3:
+                    if i == 0 and j == (self.gridSize//2):
+                        # initialise le pions du joueur 1 (millieu 1ère ligne)
+                        self.grid[i][j].setNature(4)
+
+                    elif (i == self.gridSize-1 and j == self.gridSize//2):
+                        # initialise le pions du joueur 2 (millieu 2ème ligne)
+                        self.grid[i][j].setNature(5)
+
+                    elif j == 0 and i == (self.gridSize//2):
+                        # initialise le pions du joueur 3 (millieu 1ère colonne)
+                        self.grid[i][j].setNature(6)
+
+                    elif (i % 2 == 0 and j % 2 == 0):
+                        # initialise les cases occupables par le pions
+                        self.grid[i][j].setNature(0)
+
+                    elif (i % 2 == 1 and j % 2 == 0):
+                        # initialise les barrières "-" (en non visisbles)
+                        self.grid[i][j].setNature(1)
+
+                    elif (i % 2 == 0 and j % 2 == 1):
+                        # initialise les barrières "|" (en non visibles)
+                        self.grid[i][j].setNature(2)
+
+                    else:
+                        # barrières "parasites"
+                        self.grid[i][j].setNature(7)
+
+                if self.nbPlayers == 4:
+                    if i == 0 and j == (self.gridSize//2):
+                        # initialise le pions du joueur 1 (millieu 1ère ligne)
+                        self.grid[i][j].setNature(4)
+
+                    elif (i == self.gridSize-1 and j == self.gridSize//2):
+                        # initialise le pions du joueur 2 (millieu 2ème ligne)
+                        self.grid[i][j].setNature(5)
+
+                    elif j == 0 and i == (self.gridSize//2):
+                        # initialise le pions du joueur 3 (millieu 1ère colonne)
+                        self.grid[i][j].setNature(6)
+
+                    elif (j == self.gridSize-1 and i == self.gridSize//2):
+                        # initialise le pions du joueur 4 (millieu 2ème colonne)
+                        self.grid[i][j].setNature(8)
+
+                    elif (i % 2 == 0 and j % 2 == 0):
+                        # initialise les cases occupables par le pions
+                        self.grid[i][j].setNature(0)
+
+                    elif (i % 2 == 1 and j % 2 == 0):
+                        # initialise les barrières "-" (en non visisbles)
+                        self.grid[i][j].setNature(1)
+
+                    elif (i % 2 == 0 and j % 2 == 1):
+                        # initialise les barrières "|" (en non visibles)
+                        self.grid[i][j].setNature(2)
+
+                    else:
+                        self.grid[i][j].setNature(
+                            7)  # barrières "parasites
+
+        self.player1barriers = self.nbBarrierPerPlayer
+        self.player2barriers = self.nbBarrierPerPlayer
+        self.player3barriers = self.nbBarrierPerPlayer
+        self.player4Barriers = self.nbBarrierPerPlayer
+
+    def startServer(self):
+        # Pass the current Jeu instance (self) to the Server
+
+        print("cuurentplayer choice = ", self.currentPlayer)
+        self.server = Server(self, self.player1barriers, self.player2barriers, self.player3barriers, self.player4Barriers, self.currentPlayer,
+                             self.player_id, self.gridSize, self.nbBarrierPerPlayer, self.totalBot, self.totalHuman, self.nbPlayers, self.fakeGridSize)
+        self.server.start()
+
+    def client(self):
+        host, port = ("localhost", 5566)
+        my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        try:
+            my_socket.connect((host, port))
+            print("client connecté !")
+
+        except:
+            print("connexion au serveur échoué !")
+
+        # initialisation des choix faits par le serveur
+        def initVar():
+            # serialized_game = my_socket.recv(16384)
+            # self.grid = pickle.loads(serialized_game)
+
+            serialized_data = my_socket.recv(16384)
+            data = pickle.loads(serialized_data)
+
+            self.player1barriers = int(data[0])
+            self.player2barriers = int(data[1])
+            self.player3barriers = int(data[2])
+            self.player4Barriers = int(data[3])
+            self.currentPlayer = int(data[4])
+            self.player_id = int(data[5])
+            self.gridSize = int(data[6])
+            self.nbBarrierPerPlayer = int(data[7])
+            self.totalBot = int(data[8])
+            self.totalHuman = int(data[9])
+            self.nbPlayers = int(data[10])
+            self.fakeGridSize = int(data[11])
+            self.majVariables()
+
+            serialized_id = my_socket.recv(16384)
+            self.player_id = pickle.loads(serialized_id)
+            print("id", self.player_id)
+
+            print("id =", self.player_id, "current player=", self.currentPlayer)
+
+        # fonction permettant aux clients de jouer ou re9voir le plateau
+        def play():
+
+            self.drawCellHeight()
+            while self.currentPlayer == self.player_id:
+
+                # attente d'action du joueur qui doit jouer
+                self.handlingGameEvents()
+                self.displayScreen()
+                self.drawPlayerDirection()
+                self.displayHover()
+                if self.ShowSettingsMenu == True:
+                    self.displaySettingsMenu()
+                pygame.display.flip()
+                print("current player", self.currentPlayer)
+                self.clock.tick(30)
+
+                # envoie des données au serveurs
+                # print("data sent to server by player after a play (im player) ",data)
+                # serialized_game = pickle.dumps(self.grid)
+                # my_socket.sendall(serialized_game)
+
+                # data = [str(self.player1barriers), str(self.player2barriers), str(
+                #     self.player3barriers), str(self.player4Barriers), str(self.currentPlayer)]
+
+                # serialized_data = pickle.dumps(data)
+                # my_socket.sendall(serialized_data)
+
+            while True:
+
+                # affichage plateau
+                self.handlingGameEvents()
+                self.displayScreen()
+                pygame.display.flip()
+                self.clock.tick(30)
+                print("current player", self.currentPlayer)
+                # reception données
+                # print("data received  from server after a play (im client)")
+                # my_socket.setblocking(0)
+                # serialized_game = my_socket.recv(16384)
+                # self.grid = pickle.loads(serialized_game)
+
+                # serialized_data = my_socket.recv(16384)
+                # data = pickle.loads(serialized_data)
+
+                # # mise a jour données
+                # self.player1barriers = int(data[0])
+                # self.player2barriers = int(data[1])
+                # self.player3barriers = int(data[2])
+                # self.player4Barriers = int(data[3])
+                # self.currentPlayer = int(data[4])
+        try:
+            initVar()
+            play()
+
+        except (EOFError):
+            print("Error: Connection to server lost.")
+            my_socket.close()
+
+
+class ClientThread(threading.Thread):
+    def __init__(self, client_address, client_socket, server, jeu, data, num_clients):
+        threading.Thread.__init__(self)
+        self.client_address = client_address
+        self.client_socket = client_socket
+        self.server = server
+        self.jeu = jeu
+        self.data = data
+        self.num_clients = num_clients
+
+    def init_host_choices(self):
+        serialized_data = pickle.dumps(self.data)
+        self.client_socket.sendall(serialized_data)
+
+        serialized_id = pickle.dumps(self.num_clients)
+        self.client_socket.sendall(serialized_id)
+
+    def run(self):
+        print("client connecté !")
+        self.init_host_choices()
+        # while True:
+
+        # serialized_game = self.client_socket.recv(16384)
+        # self.grid = pickle.loads(serialized_game)
+
+        # serialized_data = self.client_socket.recv(16384)
+        # data = pickle.loads(serialized_data)
+
+        # serialized_game = pickle.dumps(self.grid)
+        # self.client_socket.sendall(serialized_game)
+
+        # serialized_data = pickle.dumps(self.data)
+        # self.client_socket.sendall(serialized_data)
+
+
+class Server:
+    def __init__(self, jeu, player1barriers, player2barriers, player3barriers, player4Barriers, currentPlayer, player_id, gridSize, nbBarrierPerPlayer, totalBot, totalHuman, nbPlayers, fakeGridSize):
+        self.threads = []
+        self.sockets = []
+        self.jeu = jeu
+        self.data = [str(player1barriers), str(player2barriers), str(player3barriers), str(player4Barriers), str(currentPlayer), str(
+            player_id), str(gridSize), str(nbBarrierPerPlayer), str(totalBot), str(totalHuman), str(nbPlayers), str(fakeGridSize)]
+
+    def start(self):
+        server_socket = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind(("localhost", 5566))
+        print("le serveur est lancé...")
+
+        num_clients = 0
+        while num_clients < 3:
+            server_socket.listen(1)
+            client_socket, client_address = server_socket.accept()
+            self.sockets.append(client_socket)
+            num_clients += 1
+            new_thread = ClientThread(
+                client_address, client_socket, self, self.jeu, self.data, num_clients)
+            new_thread.init_host_choices()
+            new_thread.start()
+            self.threads.append(new_thread)
+    # ...
+
+
+if __name__ == "__main__":
+    pygame.init()
+    game = jeu()
+    game.runMenu()
+    # nnnnnnnnnnnn

@@ -1,7 +1,5 @@
 # Quoridor
- ------ Description  ------------------
-       Le jeu de Quoridor est un jeu de société stratégique pour deux ou quatre joueurs. L'objectif du jeu est d'atteindre le premier la ligne opposée de votre côté du plateau de jeu, tout en gênant votre adversaire avec des murs de bois pour lui bloquer le chemin
-------- Installation & lancement-------------------
+       Le jeu de Quoridor est un jeu de société stratégique pour deux ou quatre joueurs. L'objectif du jeu est d'atteindre le premier la ligne opposée de votre côté du plateau de jeu, tout en gênant votre adversaire avec des murs de bois pour lui bloquer le chemin.
 
 A-Prérequis
 Avant d'installer le jeu, vérifiez que votre système répond aux exigences minimales. Voici les 
